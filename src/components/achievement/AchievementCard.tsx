@@ -17,13 +17,15 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
   const isSteamOnly = achievement.source === 'steam'
   const detailUrl = `/achievements/${achievement.id}`
   const noticeLabels = [
-    isSteamOnly ? 'Steam API 항목' : null,
     achievement.isHidden ? '숨겨짐' : null,
     achievement.isMissable ? '놓치기 쉬움' : null,
     achievement.requiresSecondRun ? '2회차 필요' : null,
     achievement.requiresDlc ? 'DLC 필요' : null,
     achievement.requiresMultiplayer ? '멀티플레이 필요' : null,
-  ].filter(Boolean)
+  ].filter(
+    (label): label is string =>
+      Boolean(label) && !achievement.tags.includes(String(label)),
+  )
   const openDetail = () => {
     if (!isSteamOnly) {
       navigate(detailUrl)
