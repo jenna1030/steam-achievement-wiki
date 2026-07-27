@@ -59,9 +59,17 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
       {isSteamOnly ? (
         <span className="disabled-link">상세 정보 준비 중</span>
       ) : (
-        <Link className="text-link" to={`/achievements/${achievement.id}`}>
-          상세 보기
-        </Link>
+        <div className="inline-actions">
+          <Link className="text-link" to={`/achievements/${achievement.id}`}>
+            상세 보기
+          </Link>
+          <Link
+            className="text-link"
+            to={`/guides/new?achievementId=${achievement.id}`}
+          >
+            공략 작성
+          </Link>
+        </div>
       )}
     </article>
   )

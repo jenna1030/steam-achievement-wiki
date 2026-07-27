@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { AchievementGuide, SpoilerLevel } from '../../types/guide'
 
 const spoilerOptions: Array<{
@@ -25,9 +26,10 @@ const spoilerOptions: Array<{
 
 interface SpoilerGuideTabsProps {
   guide: AchievementGuide
+  onDelete?: () => void
 }
 
-export function SpoilerGuideTabs({ guide }: SpoilerGuideTabsProps) {
+export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
   const [selectedLevel, setSelectedLevel] = useState<SpoilerLevel>('hint')
   const selectedOption = spoilerOptions.find(
     (option) => option.level === selectedLevel,
@@ -51,6 +53,16 @@ export function SpoilerGuideTabs({ guide }: SpoilerGuideTabsProps) {
           </div>
         </dl>
       </div>
+      {guide.source === 'user' && (
+        <div className="guide-actions">
+          <Link className="text-link" to={`/guides/new?guideId=${guide.id}`}>
+            수정
+          </Link>
+          <button className="secondary-button" type="button" onClick={onDelete}>
+            삭제
+          </button>
+        </div>
+      )}
 
       <div className="spoiler-tab-list" role="tablist" aria-label="공략 공개 단계">
         {spoilerOptions.map((option) => (

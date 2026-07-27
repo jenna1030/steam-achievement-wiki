@@ -8,6 +8,7 @@ import {
   useAchievementGuidesQuery,
 } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
+import { useGuideStore } from '../stores/guideStore'
 
 export function AchievementDetailPage() {
   const { achievementId } = useParams()
@@ -22,7 +23,13 @@ export function AchievementDetailPage() {
     isError: isGuidesError,
     isLoading: isGuidesLoading,
   } = useAchievementGuidesQuery(achievementIdNumber)
+  const userGuides = useGuideStore((state) => state.userGuides)
+  const deleteGuide = useGuideStore((state) => state.deleteGuide)
   const { data: game } = useGameDetailQuery(achievement?.gameId ?? Number.NaN)
+  const combinedGuides = [
+    ...userGuides.filter((guide) => guide.achievementId === achievementIdNumber),
+    ...relatedGuides,
+  ]
 
   if (isAchievementLoading) {
     return (
@@ -81,16 +88,25 @@ export function AchievementDetailPage() {
         {isGuidesError && <ErrorState />}
         {!isGuidesLoading &&
           !isGuidesError &&
-          relatedGuides.map((guide) => (
-            <SpoilerGuideTabs guide={guide} key={guide.id} />
+          combinedGuides.map((guide) => (
+            <SpoilerGuideTabs
+              guide={guide}
+              key={`${guide.source ?? 'mock'}-${guide.id}`}
+              onDelete={
+                guide.source === 'user' ? () => deleteGuide(guide.id) : undefined
+              }
+            />
           ))}
-        {!isGuidesLoading && !isGuidesError && relatedGuides.length === 0 && (
+        {!isGuidesLoading && !isGuidesError && combinedGuides.length === 0 && (
           <div className="empty-state">
             <h3>아직 등록된 공략이 없습니다.</h3>
             <p className="muted">
               이 도전과제의 힌트와 조건을 직접 정리해볼 수 있습니다.
             </p>
-            <Link className="button-link" to="/guides/new">
+            <Link
+              className="button-link"
+              to={`/guides/new?achievementId=${achievement.id}`}
+            >
               공략 작성하기
             </Link>
           </div>
