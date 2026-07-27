@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { AchievementMetaPanel } from '../components/achievement/AchievementMetaPanel'
 import { ChecklistButton } from '../components/checklist/ChecklistButton'
+import { DifficultyVoteChart } from '../components/chart/DifficultyVoteChart'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { SpoilerGuideTabs } from '../components/guide/SpoilerGuideTabs'
@@ -11,6 +12,7 @@ import {
 } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useGuideStore } from '../stores/guideStore'
+import { useVoteStore } from '../stores/voteStore'
 
 export function AchievementDetailPage() {
   const { achievementId } = useParams()
@@ -27,6 +29,7 @@ export function AchievementDetailPage() {
   } = useAchievementGuidesQuery(achievementIdNumber)
   const userGuides = useGuideStore((state) => state.userGuides)
   const deleteGuide = useGuideStore((state) => state.deleteGuide)
+  const votes = useVoteStore((state) => state.votes)
   const { data: game } = useGameDetailQuery(achievement?.gameId ?? Number.NaN)
   const combinedGuides = [
     ...userGuides.filter((guide) => guide.achievementId === achievementIdNumber),
@@ -90,6 +93,9 @@ export function AchievementDetailPage() {
       </section>
 
       <DifficultyVote achievementId={achievement.id} />
+      <DifficultyVoteChart
+        vote={votes.find((vote) => vote.achievementId === achievement.id)}
+      />
 
       <section className="section embedded-section">
         <div className="section-heading">

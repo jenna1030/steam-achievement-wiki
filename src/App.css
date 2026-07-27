@@ -510,6 +510,65 @@ dd {
   align-items: start;
 }
 
+.recommendation-list {
+  display: grid;
+  gap: 12px;
+}
+
+.recommendation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.6fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #ddd6c6;
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
+}
+
+.recommendation-card p {
+  margin-bottom: 8px;
+  color: #69707a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.recommendation-card h3 {
+  margin-bottom: 8px;
+}
+
+.recommendation-card span {
+  color: #5d6673;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.chart-panel {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #ddd6c6;
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
+}
+
+.chart-panel .section-heading {
+  margin-bottom: 16px;
+}
+
+.chart-panel h2 {
+  font-size: 26px;
+}
+
+.chart-box {
+  min-height: 260px;
+}
+
+.compact-chart {
+  min-height: 240px;
+}
+
 .achievement-list {
   display: grid;
   gap: 12px;
@@ -982,7 +1041,8 @@ dd {
   .action-panel,
   .vote-panel,
   .vote-options,
-  .checklist-card {
+  .checklist-card,
+  .recommendation-card {
     grid-template-columns: 1fr;
   }
 

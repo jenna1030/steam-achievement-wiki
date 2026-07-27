@@ -1,9 +1,13 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { easyAchievements } from '../mocks/achievements'
+import { AchievementRateChart } from '../components/chart/AchievementRateChart'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
+import { EasyAchievementList } from '../components/recommendation/EasyAchievementList'
+import { useAchievementsQuery } from '../hooks/useAchievementsQuery'
 import { useFeaturedGamesQuery } from '../hooks/useGamesQuery'
+import { useLibraryStore } from '../stores/libraryStore'
+import { recommendEasyAchievements } from '../utils/recommendAchievements'
 
 const roadmapItems = [
   '게임 검색과 관심 게임 등록',
@@ -20,6 +24,20 @@ export function HomePage() {
     isError: isFeaturedGamesError,
     isLoading: isFeaturedGamesLoading,
   } = useFeaturedGamesQuery()
+  const favoriteGameIds = useLibraryStore((state) => state.favoriteGameIds)
+  const { data: firstGameAchievements = [] } = useAchievementsQuery(1)
+  const { data: secondGameAchievements = [] } = useAchievementsQuery(2)
+  const { data: thirdGameAchievements = [] } = useAchievementsQuery(3)
+  const allAchievements = [
+    ...firstGameAchievements,
+    ...secondGameAchievements,
+    ...thirdGameAchievements,
+  ]
+  const recommendations = recommendEasyAchievements(
+    allAchievements,
+    featuredGames,
+    favoriteGameIds,
+  )
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -122,37 +140,11 @@ export function HomePage() {
             영역입니다.
           </p>
         </div>
-        <div className="achievement-list">
-          {easyAchievements.map((achievement) => (
-            <article className="achievement-card" key={achievement.achievementId}>
-              <div>
-                <p>{achievement.game}</p>
-                <h3>{achievement.title}</h3>
-                <div className="tag-row">
-                  {achievement.tags.map((tag) => (
-                    <span key={tag}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-              <dl>
-                <div>
-                  <dt>달성률</dt>
-                  <dd>{achievement.rate}</dd>
-                </div>
-                <div>
-                  <dt>예상 시간</dt>
-                  <dd>{achievement.time}</dd>
-                </div>
-              </dl>
-              <Link
-                className="text-link"
-                to={`/achievements/${achievement.achievementId}`}
-              >
-                공략 보기
-              </Link>
-            </article>
-          ))}
-        </div>
+        <EasyAchievementList recommendations={recommendations} />
+      </section>
+
+      <section className="section">
+        <AchievementRateChart achievements={allAchievements} />
       </section>
 
       <section className="section roadmap" id="roadmap">
