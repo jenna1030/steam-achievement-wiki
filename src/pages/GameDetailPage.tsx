@@ -43,6 +43,11 @@ export function GameDetailPage() {
     () => mergeSteamAchievements(gameAchievements, steamAchievements, gameIdNumber),
     [gameAchievements, gameIdNumber, steamAchievements],
   )
+  const apiStatusMessage = isSteamError
+    ? `Steam API 연결에 실패해 기본 데이터 ${gameAchievements.length}개를 표시합니다.`
+    : isSteamSuccess
+      ? `Steam API 항목 ${steamAchievements.length}개와 기본 데이터를 함께 표시합니다.`
+      : '기본 도전과제 데이터를 먼저 표시하고, Steam API 응답이 오면 달성률을 반영합니다.'
   const achievementTags = useMemo(
     () => getAchievementTags(mergedAchievements),
     [mergedAchievements],
@@ -122,6 +127,7 @@ export function GameDetailPage() {
             Vite 개발 서버 프록시를 통해 Steam 공개 API에서 글로벌 달성률을
             받아오고, 매칭되는 항목은 도전과제 목록의 달성률에 반영합니다.
           </p>
+          <p className="muted">{apiStatusMessage}</p>
         </div>
         <div>
           {isSteamFetching && <span>연결 확인 중</span>}

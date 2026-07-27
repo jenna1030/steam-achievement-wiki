@@ -248,6 +248,15 @@ button:hover,
   overflow: hidden;
 }
 
+.clickable-card {
+  cursor: pointer;
+}
+
+.clickable-card:focus-visible {
+  outline: 3px solid var(--color-blue);
+  outline-offset: 3px;
+}
+
 .game-card img {
   display: block;
   width: 100%;

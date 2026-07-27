@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { Game } from '../../types/game'
 
 interface GameCardProps {
@@ -12,8 +12,26 @@ export function GameCard({
   isFavorite,
   onToggleFavorite,
 }: GameCardProps) {
+  const navigate = useNavigate()
+  const detailUrl = `/games/${game.id}`
+
+  const openDetail = () => {
+    navigate(detailUrl)
+  }
+
   return (
-    <article className="game-card">
+    <article
+      className="game-card clickable-card"
+      role="link"
+      tabIndex={0}
+      onClick={openDetail}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          openDetail()
+        }
+      }}
+    >
       <img src={game.image} alt={`${game.title} 대표 이미지`} />
       <div className="game-card-body">
         <p>{game.genre}</p>
@@ -33,11 +51,18 @@ export function GameCard({
           <button
             className={isFavorite ? 'secondary-button is-selected' : 'secondary-button'}
             type="button"
-            onClick={() => onToggleFavorite(game.id)}
+            onClick={(event) => {
+              event.stopPropagation()
+              onToggleFavorite(game.id)
+            }}
           >
             {isFavorite ? '관심 해제' : '관심 게임'}
           </button>
-          <Link className="text-link" to={`/games/${game.id}`}>
+          <Link
+            className="text-link"
+            to={detailUrl}
+            onClick={(event) => event.stopPropagation()}
+          >
             상세 보기
           </Link>
         </div>

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { Achievement } from '../../types/achievement'
 
 const difficultyLabel = {
@@ -13,7 +13,9 @@ interface AchievementCardProps {
 }
 
 export function AchievementCard({ achievement }: AchievementCardProps) {
+  const navigate = useNavigate()
   const isSteamOnly = achievement.source === 'steam'
+  const detailUrl = `/achievements/${achievement.id}`
   const noticeLabels = [
     isSteamOnly ? 'Steam API 항목' : null,
     achievement.isHidden ? '숨겨짐' : null,
@@ -22,9 +24,27 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
     achievement.requiresDlc ? 'DLC 필요' : null,
     achievement.requiresMultiplayer ? '멀티플레이 필요' : null,
   ].filter(Boolean)
+  const openDetail = () => {
+    if (!isSteamOnly) {
+      navigate(detailUrl)
+    }
+  }
 
   return (
-    <article className="achievement-card">
+    <article
+      className={
+        isSteamOnly ? 'achievement-card' : 'achievement-card clickable-card'
+      }
+      role={isSteamOnly ? undefined : 'link'}
+      tabIndex={isSteamOnly ? undefined : 0}
+      onClick={openDetail}
+      onKeyDown={(event) => {
+        if (!isSteamOnly && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault()
+          openDetail()
+        }
+      }}
+    >
       <div>
         <p>{difficultyLabel[achievement.difficulty]}</p>
         <h3>{achievement.title}</h3>
@@ -60,12 +80,17 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
         <span className="disabled-link">상세 정보 준비 중</span>
       ) : (
         <div className="inline-actions">
-          <Link className="text-link" to={`/achievements/${achievement.id}`}>
+          <Link
+            className="text-link"
+            to={detailUrl}
+            onClick={(event) => event.stopPropagation()}
+          >
             상세 보기
           </Link>
           <Link
             className="text-link"
             to={`/guides/new?achievementId=${achievement.id}`}
+            onClick={(event) => event.stopPropagation()}
           >
             공략 작성
           </Link>
