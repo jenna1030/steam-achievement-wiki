@@ -34,11 +34,11 @@ export function AchievementRateChart({
       <div className="chart-box">
         <ResponsiveContainer height={260} width="100%">
           <BarChart data={data}>
-            <CartesianGrid stroke="#e5dece" strokeDasharray="3 3" />
+            <CartesianGrid stroke="#ded2c1" strokeDasharray="3 3" />
             <XAxis dataKey="name" tick={{ fontSize: 12 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
             <Tooltip />
-            <Bar dataKey="rate" fill="#0f7a5f" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="rate" fill="#c9140b" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

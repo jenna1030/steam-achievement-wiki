@@ -1,7 +1,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import type { DifficultyVote as DifficultyVoteData } from '../../types/checklist'
 
-const colors = ['#0f7a5f', '#d59b2d', '#d76b3f', '#8f3f71']
+const colors = ['#315f9f', '#c48a22', '#c9140b', '#17234b']
 
 interface DifficultyVoteChartProps {
   vote?: DifficultyVoteData
