@@ -1,17 +1,43 @@
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AchievementCard } from '../components/achievement/AchievementCard'
+import { AchievementFilterBar } from '../components/achievement/AchievementFilterBar'
 import { achievements } from '../mocks/achievements'
 import { games } from '../mocks/games'
-
-const difficultyLabel = {
-  easy: '쉬움',
-  normal: '보통',
-  hard: '어려움',
-  'very-hard': '매우 어려움',
-}
+import type { AchievementSortOption } from '../types/achievement'
+import {
+  filterAchievements,
+  getAchievementTags,
+  sortAchievements,
+} from '../utils/achievementFilters'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
-  const game = games.find((item) => item.id === Number(gameId))
+  const gameIdNumber = Number(gameId)
+  const [sortOption, setSortOption] =
+    useState<AchievementSortOption>('rate-desc')
+  const [selectedTag, setSelectedTag] = useState('all')
+  const [showHidden, setShowHidden] = useState(false)
+  const game = games.find((item) => item.id === gameIdNumber)
+
+  const gameAchievements = useMemo(
+    () =>
+      achievements.filter((achievement) => achievement.gameId === gameIdNumber),
+    [gameIdNumber],
+  )
+  const achievementTags = useMemo(
+    () => getAchievementTags(gameAchievements),
+    [gameAchievements],
+  )
+  const visibleAchievements = useMemo(() => {
+    const filteredAchievements = filterAchievements(
+      gameAchievements,
+      selectedTag,
+      showHidden,
+    )
+
+    return sortAchievements(filteredAchievements, sortOption)
+  }, [gameAchievements, selectedTag, showHidden, sortOption])
 
   if (!game) {
     return (
@@ -25,10 +51,6 @@ export function GameDetailPage() {
       </main>
     )
   }
-
-  const gameAchievements = achievements.filter(
-    (achievement) => achievement.gameId === game.id,
-  )
 
   return (
     <main className="page">
@@ -63,48 +85,30 @@ export function GameDetailPage() {
           <p className="eyebrow">Achievements</p>
           <h2>도전과제 목록</h2>
         </div>
-        <div className="toolbar" aria-label="도전과제 정렬과 필터">
-          <select defaultValue="rate-desc" aria-label="정렬">
-            <option value="rate-desc">달성률 높은 순</option>
-            <option value="rate-asc">달성률 낮은 순</option>
-            <option value="name">이름순</option>
-            <option value="difficulty">난이도순</option>
-          </select>
-          <select defaultValue="all" aria-label="태그 필터">
-            <option value="all">전체 태그</option>
-            <option value="easy">쉬움</option>
-            <option value="missable">놓치기 쉬움</option>
-          </select>
-        </div>
-        <div className="achievement-list">
-          {gameAchievements.map((achievement) => (
-            <article className="achievement-card" key={achievement.id}>
-              <div>
-                <p>{difficultyLabel[achievement.difficulty]}</p>
-                <h3>{achievement.title}</h3>
-                <p className="muted">{achievement.description}</p>
-                <div className="tag-row">
-                  {achievement.tags.map((tag) => (
-                    <span key={tag}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-              <dl>
-                <div>
-                  <dt>달성률</dt>
-                  <dd>{achievement.globalRate}%</dd>
-                </div>
-                <div>
-                  <dt>예상 시간</dt>
-                  <dd>{achievement.estimatedMinutes}분</dd>
-                </div>
-              </dl>
-              <Link className="text-link" to={`/achievements/${achievement.id}`}>
-                상세 보기
-              </Link>
-            </article>
-          ))}
-        </div>
+        <AchievementFilterBar
+          resultCount={visibleAchievements.length}
+          selectedTag={selectedTag}
+          showHidden={showHidden}
+          sortOption={sortOption}
+          tags={achievementTags}
+          onShowHiddenChange={setShowHidden}
+          onSortChange={setSortOption}
+          onTagChange={setSelectedTag}
+        />
+        {visibleAchievements.length > 0 ? (
+          <div className="achievement-list">
+            {visibleAchievements.map((achievement) => (
+              <AchievementCard achievement={achievement} key={achievement.id} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <h3>조건에 맞는 도전과제가 없습니다.</h3>
+            <p className="muted">
+              태그를 전체로 바꾸거나 숨겨진 도전과제 표시를 켜보세요.
+            </p>
+          </div>
+        )}
       </section>
     </main>
   )

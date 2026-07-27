@@ -1,4 +1,9 @@
 export type AchievementDifficulty = 'easy' | 'normal' | 'hard' | 'very-hard'
+export type AchievementSortOption =
+  | 'rate-desc'
+  | 'rate-asc'
+  | 'name'
+  | 'difficulty'
 
 export interface Achievement {
   id: number

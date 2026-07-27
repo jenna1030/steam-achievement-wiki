@@ -316,7 +316,13 @@ dd {
   align-items: end;
 }
 
-.search-toolbar label {
+.achievement-toolbar {
+  grid-template-columns: 190px 190px minmax(210px, 1fr) 120px;
+  align-items: end;
+}
+
+.search-toolbar label,
+.achievement-toolbar label {
   display: grid;
   gap: 8px;
   color: #343941;
@@ -332,6 +338,22 @@ dd {
   font-size: 14px;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.checkbox-label {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 46px;
+  padding: 0 12px;
+  background: #f8faf8;
+  border: 1px solid #cfd6cf;
+  border-radius: 6px;
+}
+
+.checkbox-label input {
+  width: 18px;
+  min-height: 18px;
+  padding: 0;
 }
 
 .card-actions {
@@ -453,6 +475,25 @@ dd {
   font-size: 12px;
   font-weight: 800;
   background: #fff0c2;
+  border-radius: 999px;
+}
+
+.notice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.notice-row span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  color: #8a2c19;
+  font-size: 12px;
+  font-weight: 900;
+  background: #ffe3d9;
   border-radius: 999px;
 }
 
@@ -602,6 +643,7 @@ dd {
   .detail-hero,
   .toolbar,
   .search-toolbar,
+  .achievement-toolbar,
   .info-grid,
   .spoiler-columns {
     grid-template-columns: 1fr;
