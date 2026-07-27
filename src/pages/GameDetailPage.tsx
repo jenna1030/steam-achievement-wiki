@@ -13,7 +13,10 @@ import {
   getAchievementTags,
   sortAchievements,
 } from '../utils/achievementFilters'
-import { mergeSteamAchievements } from '../utils/steamAchievements'
+import {
+  countSteamAchievementMatches,
+  mergeSteamAchievements,
+} from '../utils/steamAchievements'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
@@ -40,13 +43,17 @@ export function GameDetailPage() {
   } = useSteamAchievementPercentagesQuery(game?.steamAppId ?? Number.NaN)
 
   const mergedAchievements = useMemo(
-    () => mergeSteamAchievements(gameAchievements, steamAchievements, gameIdNumber),
-    [gameAchievements, gameIdNumber, steamAchievements],
+    () => mergeSteamAchievements(gameAchievements, steamAchievements),
+    [gameAchievements, steamAchievements],
+  )
+  const steamMatchCount = useMemo(
+    () => countSteamAchievementMatches(gameAchievements, steamAchievements),
+    [gameAchievements, steamAchievements],
   )
   const apiStatusMessage = isSteamError
     ? `Steam API 연결에 실패해 기본 데이터 ${gameAchievements.length}개를 표시합니다.`
     : isSteamSuccess
-      ? `Steam API 항목 ${steamAchievements.length}개와 기본 데이터를 함께 표시합니다.`
+      ? `Steam API 달성률 ${steamMatchCount}개를 기존 도전과제에 반영했습니다.`
       : '기본 도전과제 데이터를 먼저 표시하고, Steam API 응답이 오면 달성률을 반영합니다.'
   const achievementTags = useMemo(
     () => getAchievementTags(mergedAchievements),
@@ -132,7 +139,7 @@ export function GameDetailPage() {
         <div>
           {isSteamFetching && <span>연결 확인 중</span>}
           {isSteamSuccess && (
-            <strong>{steamAchievements.length}개 항목 반영 가능</strong>
+            <strong>{steamMatchCount}개 달성률 반영</strong>
           )}
           {isSteamError && <strong>연결 실패</strong>}
           {!isSteamFetching && !isSteamError && !isSteamSuccess && (
