@@ -1,9 +1,16 @@
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import type { Achievement } from '../../types/achievement'
+import type { Game } from '../../types/game'
 import type { AchievementGuide, GuideFormValues } from '../../types/guide'
 
 interface GuideFormProps {
+  achievements: Achievement[]
   defaultAchievementId: number
   defaultGuide?: AchievementGuide
+  games: Game[]
+  selectedGameId: number
+  onGameChange: (gameId: number) => void
   onSubmit: (values: GuideFormValues) => void
 }
 
@@ -12,11 +19,17 @@ function joinLines(lines: string[]) {
 }
 
 export function GuideForm({
+  achievements,
   defaultAchievementId,
   defaultGuide,
+  games,
+  selectedGameId,
+  onGameChange,
   onSubmit,
 }: GuideFormProps) {
-  const { handleSubmit, register, watch } = useForm<GuideFormValues>({
+  const [gameSearchQuery, setGameSearchQuery] = useState('')
+  const [achievementSearchQuery, setAchievementSearchQuery] = useState('')
+  const { handleSubmit, register, setValue, watch } = useForm<GuideFormValues>({
     defaultValues: {
       achievementId: defaultGuide?.achievementId ?? defaultAchievementId,
       title: defaultGuide?.title ?? '',
@@ -35,6 +48,49 @@ export function GuideForm({
     },
   })
   const hasSpoiler = watch('hasSpoiler')
+  const selectedAchievementId = watch('achievementId')
+  const filteredGames = useMemo(() => {
+    const normalizedQuery = gameSearchQuery.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return games
+    }
+
+    return games.filter(
+      (game) =>
+        game.title.toLowerCase().includes(normalizedQuery) ||
+        String(game.steamAppId).includes(normalizedQuery),
+    )
+  }, [gameSearchQuery, games])
+  const filteredAchievements = useMemo(() => {
+    const normalizedQuery = achievementSearchQuery.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return achievements
+    }
+
+    return achievements.filter(
+      (achievement) =>
+        achievement.title.toLowerCase().includes(normalizedQuery) ||
+        achievement.description.toLowerCase().includes(normalizedQuery),
+    )
+  }, [achievementSearchQuery, achievements])
+  const selectedGame = games.find((game) => game.id === selectedGameId)
+  const selectedAchievement = achievements.find(
+    (achievement) => achievement.id === Number(selectedAchievementId),
+  )
+
+  useEffect(() => {
+    if (
+      achievements.length > 0 &&
+      !achievements.some(
+        (achievement) => achievement.id === Number(selectedAchievementId),
+      )
+    ) {
+      setValue('achievementId', achievements[0].id)
+    }
+  }, [achievements, selectedAchievementId, setValue])
+
   const handleFormSubmit = (values: GuideFormValues) => {
     onSubmit({
       ...values,
@@ -44,10 +100,67 @@ export function GuideForm({
 
   return (
     <form className="editor-form" onSubmit={handleSubmit(handleFormSubmit)}>
-      <label>
-        도전과제 ID
-        <input type="number" {...register('achievementId', { valueAsNumber: true })} />
-      </label>
+      <section className="selection-panel" aria-label="공략 대상 선택">
+        <div className="section-heading">
+          <p className="eyebrow">Target</p>
+          <h2>공략할 도전과제 선택</h2>
+          <p className="muted">
+            Steam 앱을 먼저 고른 뒤, 해당 게임의 도전과제를 검색해서
+            선택합니다.
+          </p>
+        </div>
+        <div className="form-grid">
+          <label>
+            Steam 앱 검색
+            <input
+              type="search"
+              value={gameSearchQuery}
+              placeholder="예: Hollow Knight 또는 367520"
+              onChange={(event) => setGameSearchQuery(event.target.value)}
+            />
+          </label>
+          <label>
+            Steam 앱 선택
+            <select
+              value={selectedGameId}
+              onChange={(event) => onGameChange(Number(event.target.value))}
+            >
+              {filteredGames.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.title} #{game.steamAppId}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="form-grid">
+          <label>
+            도전과제 검색
+            <input
+              type="search"
+              value={achievementSearchQuery}
+              placeholder="도전과제 이름이나 설명 검색"
+              onChange={(event) =>
+                setAchievementSearchQuery(event.target.value)
+              }
+            />
+          </label>
+          <label>
+            도전과제 선택
+            <select {...register('achievementId', { valueAsNumber: true })}>
+              {filteredAchievements.map((achievement) => (
+                <option key={achievement.id} value={achievement.id}>
+                  {achievement.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="form-note">
+          선택됨: {selectedGame?.title ?? '게임 없음'} /{' '}
+          {selectedAchievement?.title ?? '도전과제 없음'}
+        </p>
+      </section>
       <label>
         공략 제목
         <input

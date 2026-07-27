@@ -1,5 +1,13 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { ErrorState } from '../components/common/ErrorState'
+import { LoadingState } from '../components/common/LoadingState'
 import { GuideForm } from '../components/guide/GuideForm'
+import {
+  useAchievementDetailQuery,
+  useAchievementsQuery,
+} from '../hooks/useAchievementsQuery'
+import { useGamesQuery } from '../hooks/useGamesQuery'
 import { useGuideStore } from '../stores/guideStore'
 import type { GuideFormValues } from '../types/guide'
 
@@ -8,10 +16,37 @@ export function GuideEditorPage() {
   const navigate = useNavigate()
   const guideId = Number(searchParams.get('guideId'))
   const achievementId = Number(searchParams.get('achievementId') ?? 103)
+  const [selectedGameId, setSelectedGameId] = useState(1)
   const userGuides = useGuideStore((state) => state.userGuides)
   const addGuide = useGuideStore((state) => state.addGuide)
   const updateGuide = useGuideStore((state) => state.updateGuide)
   const editingGuide = userGuides.find((guide) => guide.id === guideId)
+  const defaultAchievementId = editingGuide?.achievementId ?? achievementId
+  const {
+    data: defaultAchievement,
+    isLoading: isDefaultAchievementLoading,
+  } = useAchievementDetailQuery(defaultAchievementId)
+  const {
+    data: games = [],
+    isError: isGamesError,
+    isLoading: isGamesLoading,
+  } = useGamesQuery()
+  const {
+    data: achievements = [],
+    isError: isAchievementsError,
+    isLoading: isAchievementsLoading,
+  } = useAchievementsQuery(selectedGameId)
+
+  useEffect(() => {
+    if (defaultAchievement) {
+      setSelectedGameId(defaultAchievement.gameId)
+      return
+    }
+
+    if (!defaultAchievement && games.length > 0) {
+      setSelectedGameId(games[0].id)
+    }
+  }, [defaultAchievement, games])
 
   const handleSubmit = (values: GuideFormValues) => {
     if (editingGuide) {
@@ -40,11 +75,25 @@ export function GuideEditorPage() {
         )}
       </section>
 
-      <GuideForm
-        defaultAchievementId={editingGuide?.achievementId ?? achievementId}
-        defaultGuide={editingGuide}
-        onSubmit={handleSubmit}
-      />
+      {(isGamesLoading || isAchievementsLoading || isDefaultAchievementLoading) && (
+        <LoadingState message="공략 작성 대상을 불러오는 중입니다." />
+      )}
+      {(isGamesError || isAchievementsError) && <ErrorState />}
+      {!isGamesLoading &&
+        !isAchievementsLoading &&
+        !isDefaultAchievementLoading &&
+        !isGamesError &&
+        !isAchievementsError && (
+          <GuideForm
+            achievements={achievements}
+            defaultAchievementId={defaultAchievementId}
+            defaultGuide={editingGuide}
+            games={games}
+            selectedGameId={selectedGameId}
+            onGameChange={setSelectedGameId}
+            onSubmit={handleSubmit}
+          />
+        )}
     </main>
   )
 }
