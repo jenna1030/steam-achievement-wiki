@@ -13,6 +13,7 @@ import {
   getAchievementTags,
   sortAchievements,
 } from '../utils/achievementFilters'
+import { mergeSteamAchievementPercentages } from '../utils/steamAchievements'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
@@ -38,19 +39,23 @@ export function GameDetailPage() {
     isSuccess: isSteamSuccess,
   } = useSteamAchievementPercentagesQuery(game?.steamAppId ?? Number.NaN)
 
+  const mergedAchievements = useMemo(
+    () => mergeSteamAchievementPercentages(gameAchievements, steamAchievements),
+    [gameAchievements, steamAchievements],
+  )
   const achievementTags = useMemo(
-    () => getAchievementTags(gameAchievements),
-    [gameAchievements],
+    () => getAchievementTags(mergedAchievements),
+    [mergedAchievements],
   )
   const visibleAchievements = useMemo(() => {
     const filteredAchievements = filterAchievements(
-      gameAchievements,
+      mergedAchievements,
       selectedTag,
       showHidden,
     )
 
     return sortAchievements(filteredAchievements, sortOption)
-  }, [gameAchievements, selectedTag, showHidden, sortOption])
+  }, [mergedAchievements, selectedTag, showHidden, sortOption])
 
   if (isGameLoading) {
     return (
@@ -115,13 +120,13 @@ export function GameDetailPage() {
           <h2>공개 도전과제 달성률 연결 테스트</h2>
           <p className="muted">
             Vite 개발 서버 프록시를 통해 Steam 공개 API에서 글로벌 달성률을
-            받아옵니다.
+            받아오고, 매칭되는 항목은 도전과제 목록의 달성률에 반영합니다.
           </p>
         </div>
         <div>
           {isSteamFetching && <span>연결 확인 중</span>}
           {isSteamSuccess && (
-            <strong>{steamAchievements.length}개 항목 수신</strong>
+            <strong>{steamAchievements.length}개 항목 반영 가능</strong>
           )}
           {isSteamError && <strong>연결 실패</strong>}
           {!isSteamFetching && !isSteamError && !isSteamSuccess && (

@@ -10,6 +10,7 @@ export interface Achievement {
   gameId: number
   title: string
   description: string
+  steamAchievementName?: string
   iconUrl: string
   globalRate: number
   difficulty: AchievementDifficulty

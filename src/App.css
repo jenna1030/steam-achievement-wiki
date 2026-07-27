@@ -427,6 +427,54 @@ dd {
   gap: 8px;
 }
 
+.steam-app-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 22px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #ddd6c6;
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
+}
+
+.steam-app-panel h2 {
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+.steam-app-panel > .muted,
+.steam-app-results {
+  grid-column: 1 / -1;
+}
+
+.steam-app-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.steam-app-results span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  color: #343941;
+  font-size: 13px;
+  font-weight: 800;
+  background: #f7f5ee;
+  border: 1px solid #e5dece;
+  border-radius: 999px;
+}
+
+.steam-app-results small {
+  color: #69707a;
+  font-size: 12px;
+}
+
 .chip-button {
   min-height: 32px;
   padding: 0 10px;
@@ -814,7 +862,8 @@ dd {
   .meta-panel,
   .guide-header,
   .spoiler-tab-list,
-  .guide-detail-grid {
+  .guide-detail-grid,
+  .steam-app-panel {
     grid-template-columns: 1fr;
   }
 
