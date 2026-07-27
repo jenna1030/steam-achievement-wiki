@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { type FormEvent, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { easyAchievements } from '../mocks/achievements'
 import { featuredGames } from '../mocks/games'
 
@@ -10,6 +11,20 @@ const roadmapItems = [
 ]
 
 export function HomePage() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const normalizedQuery = searchQuery.trim()
+
+    navigate(
+      normalizedQuery.length > 0
+        ? `/games?query=${encodeURIComponent(normalizedQuery)}`
+        : '/games',
+    )
+  }
+
   return (
     <>
       <section className="hero-section">
@@ -20,17 +35,23 @@ export function HomePage() {
             Steam 게임의 도전과제를 살펴보고, 스포일러 단계별 공략과 난이도
             투표를 참고해 다음 목표를 정하는 개인 프로젝트입니다.
           </p>
-          <form className="search-panel" aria-label="게임 검색">
+          <form
+            className="search-panel"
+            aria-label="게임 검색"
+            onSubmit={handleSearchSubmit}
+          >
             <label htmlFor="game-search">게임 검색</label>
             <div className="search-row">
               <input
                 id="game-search"
                 type="search"
+                value={searchQuery}
                 placeholder="예: Hollow Knight"
+                onChange={(event) => setSearchQuery(event.target.value)}
               />
-              <Link className="button-link" to="/games">
+              <button type="submit">
                 검색
-              </Link>
+              </button>
             </div>
           </form>
         </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { GameCard } from '../components/game/GameCard'
 import { GameSearchForm } from '../components/search/GameSearchForm'
 import { games } from '../mocks/games'
@@ -7,8 +8,10 @@ import type { GameSearchFilters } from '../types/search'
 import { filterGames, getGameGenres } from '../utils/gameFilters'
 
 export function GameSearchPage() {
+  const [searchParams] = useSearchParams()
+  const initialQuery = searchParams.get('query') ?? ''
   const [filters, setFilters] = useState<GameSearchFilters>({
-    query: '',
+    query: initialQuery,
     genre: 'all',
     achievementFilter: 'all',
   })
