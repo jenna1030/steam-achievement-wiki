@@ -5,7 +5,6 @@ import { LoadingState } from '../components/common/LoadingState'
 import { GameCard } from '../components/game/GameCard'
 import { GameSearchForm } from '../components/search/GameSearchForm'
 import { useGamesQuery } from '../hooks/useGamesQuery'
-import { useSteamAppsQuery } from '../hooks/useSteamAppsQuery'
 import { useLibraryStore } from '../stores/libraryStore'
 import type { GameSearchFilters } from '../types/search'
 import { filterGames, getGameGenres } from '../utils/gameFilters'
@@ -23,29 +22,12 @@ export function GameSearchPage() {
   const toggleFavoriteGame = useLibraryStore((state) => state.toggleFavoriteGame)
   const addRecentSearch = useLibraryStore((state) => state.addRecentSearch)
   const { data: games = [], isError, isLoading } = useGamesQuery()
-  const {
-    data: steamApps = [],
-    isError: isSteamAppsError,
-    isFetching: isSteamAppsFetching,
-    refetch: fetchSteamApps,
-  } = useSteamAppsQuery()
 
   const genres = useMemo(() => getGameGenres(games), [games])
   const filteredGames = useMemo(
     () => filterGames(games, filters),
     [filters, games],
   )
-  const steamAppMatches = useMemo(() => {
-    const normalizedQuery = filters.query.trim().toLowerCase()
-
-    if (normalizedQuery.length < 2) {
-      return []
-    }
-
-    return steamApps
-      .filter((app) => app.name.toLowerCase().includes(normalizedQuery))
-      .slice(0, 8)
-  }, [filters.query, steamApps])
 
   return (
     <main className="page">
@@ -102,37 +84,15 @@ export function GameSearchPage() {
           <section className="steam-app-panel" aria-label="Steam 앱 목록 검색">
             <div>
               <p className="eyebrow">Steam App List</p>
-              <h2>Steam 공개 앱 목록 검색</h2>
+              <h2>Steam 앱 목록 연동 안내</h2>
               <p className="muted">
-                공식 앱 목록 API는 appid와 이름만 제공하므로, 상세 카드 대신
-                검색 후보 확인용으로 사용합니다.
+                공식 앱 목록 API는 현재 API Key가 필요합니다. 키를
+                브라우저에 직접 노출하지 않기 위해 1차 구현에서는 mock 게임
+                검색을 유지하고, 앱 목록 연동은 백엔드 프록시가 생긴 뒤 2차
+                확장으로 분리합니다.
               </p>
             </div>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => fetchSteamApps()}
-            >
-              {isSteamAppsFetching ? '불러오는 중' : 'Steam 목록 불러오기'}
-            </button>
-            {isSteamAppsError && (
-              <p className="muted">Steam 앱 목록을 불러오지 못했습니다.</p>
-            )}
-            {steamApps.length > 0 && (
-              <p className="muted">
-                Steam 공개 앱 {steamApps.length.toLocaleString()}개를
-                불러왔습니다.
-              </p>
-            )}
-            {steamAppMatches.length > 0 && (
-              <div className="steam-app-results">
-                {steamAppMatches.map((app) => (
-                  <span key={app.appid}>
-                    {app.name} <small>#{app.appid}</small>
-                  </span>
-                ))}
-              </div>
-            )}
+            <span>API Key 비노출</span>
           </section>
 
           {filteredGames.length > 0 ? (

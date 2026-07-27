@@ -14,12 +14,6 @@ interface SteamGlobalAchievementResponse {
   }
 }
 
-interface SteamAppListResponse {
-  response?: {
-    apps?: SteamApp[]
-  }
-}
-
 export async function fetchSteamGlobalAchievementPercentages(
   steamAppId: number,
 ) {
@@ -37,28 +31,7 @@ export async function fetchSteamGlobalAchievementPercentages(
 }
 
 export async function fetchSteamAppList() {
-  const apiKey = import.meta.env.VITE_STEAM_API_KEY as string | undefined
-
-  if (!apiKey) {
-    throw new Error('Steam API Key가 필요합니다.')
-  }
-
-  const params = new URLSearchParams({
-    key: apiKey,
-    include_games: 'true',
-    include_dlc: 'false',
-    include_software: 'false',
-    include_videos: 'false',
-    include_hardware: 'false',
-    max_results: '1000',
-  })
-  const response = await fetch(`/steam-api/IStoreService/GetAppList/v1/?${params}`)
-
-  if (!response.ok) {
-    throw new Error('Steam 공개 앱 목록을 불러오지 못했습니다.')
-  }
-
-  const data = (await response.json()) as SteamAppListResponse
-
-  return data.response?.apps?.filter((app) => app.name.trim().length > 0) ?? []
+  throw new Error(
+    'Steam 앱 목록 API는 API Key가 필요하므로 백엔드 프록시에서 호출해야 합니다.',
+  )
 }
