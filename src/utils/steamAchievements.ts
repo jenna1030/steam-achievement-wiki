@@ -1,15 +1,64 @@
-import type { SteamGlobalAchievement } from '../apis/steamApi'
-import type { Achievement } from '../types/achievement'
+import type { SteamAchievement } from '../apis/steamApi'
+import type { Achievement, AchievementDifficulty } from '../types/achievement'
+
+function getDifficultyFromPercent(percent: number): AchievementDifficulty {
+  if (percent >= 50) {
+    return 'easy'
+  }
+
+  if (percent >= 20) {
+    return 'normal'
+  }
+
+  if (percent >= 5) {
+    return 'hard'
+  }
+
+  return 'very-hard'
+}
+
+function createSteamAchievement(
+  steamAchievement: SteamAchievement,
+  gameId: number,
+  index: number,
+): Achievement {
+  return {
+    id: gameId * 100000 + index,
+    gameId,
+    source: 'steam',
+    title: steamAchievement.displayName || steamAchievement.name,
+    description:
+      steamAchievement.description ||
+      'Steam schema에서 설명을 제공하지 않는 도전과제입니다.',
+    steamAchievementName: steamAchievement.name,
+    iconUrl: steamAchievement.icon,
+    globalRate: Number(steamAchievement.percent.toFixed(1)),
+    difficulty: getDifficultyFromPercent(steamAchievement.percent),
+    estimatedMinutes: 0,
+    tags: ['Steam API'],
+    isHidden: steamAchievement.hidden === 1,
+    isMissable: false,
+    requiresSecondRun: false,
+    requiresDlc: false,
+    requiresMultiplayer: false,
+    platformNotes: [],
+    bugNotes: [],
+  }
+}
 
 export function mergeSteamAchievements(
   achievements: Achievement[],
-  steamAchievements: SteamGlobalAchievement[],
+  steamAchievements: SteamAchievement[],
+  gameId: number,
 ) {
   const steamAchievementMap = new Map(
-    steamAchievements.map((achievement) => [
-      achievement.name,
-      Number(achievement.percent),
-    ]),
+    steamAchievements.map((achievement) => [achievement.name, achievement]),
+  )
+
+  const mappedSteamNames = new Set(
+    achievements
+      .map((achievement) => achievement.steamAchievementName)
+      .filter((name): name is string => Boolean(name)),
   )
 
   const curatedAchievements = achievements.map((achievement) => {
@@ -17,25 +66,35 @@ export function mergeSteamAchievements(
       return achievement
     }
 
-    const steamRate = steamAchievementMap.get(achievement.steamAchievementName)
+    const steamAchievement = steamAchievementMap.get(
+      achievement.steamAchievementName,
+    )
 
-    if (steamRate === undefined || Number.isNaN(steamRate)) {
+    if (!steamAchievement) {
       return achievement
     }
 
     return {
       ...achievement,
       source: achievement.source ?? 'curated',
-      globalRate: Number(steamRate.toFixed(1)),
+      iconUrl: achievement.iconUrl || steamAchievement.icon,
+      globalRate: Number(steamAchievement.percent.toFixed(1)),
+      isHidden: achievement.isHidden || steamAchievement.hidden === 1,
     }
   })
 
-  return curatedAchievements
+  const steamOnlyAchievements = steamAchievements
+    .filter((achievement) => !mappedSteamNames.has(achievement.name))
+    .map((achievement, index) =>
+      createSteamAchievement(achievement, gameId, index + 1),
+    )
+
+  return [...curatedAchievements, ...steamOnlyAchievements]
 }
 
 export function countSteamAchievementMatches(
   achievements: Achievement[],
-  steamAchievements: SteamGlobalAchievement[],
+  steamAchievements: SteamAchievement[],
 ) {
   const steamAchievementNames = new Set(
     steamAchievements.map((achievement) => achievement.name),

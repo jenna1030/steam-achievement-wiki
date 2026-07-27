@@ -15,22 +15,39 @@ BCSD 프론트엔드 트랙 개인 프로젝트입니다. Steam 게임의 도전
 
 ## Steam API 연동 범위
 
-현재 프론트엔드에서 직접 연결하는 API는 API Key 없이 호출 가능한 공개 API만 사용합니다.
+Steam API Key가 필요한 요청은 브라우저에서 직접 호출하지 않고, 로컬 백엔드 프록시를 통해 호출합니다.
 
 - `ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002`
   - 게임별 글로벌 도전과제 달성률 조회
-  - 호출 실패 시 기존 mock 도전과제 데이터를 유지합니다.
-- Steam 앱 목록 API
-  - 현재 공식 권장 API인 `IStoreService/GetAppList/v1`은 API Key가 필요합니다.
-  - 브라우저에서 직접 호출하면 키가 Network 탭에 노출될 수 있어 1차 구현에서는 제외했습니다.
-  - 추후 백엔드 프록시를 추가하면 검색 후보 조회 기능으로 확장할 예정입니다.
+- `ISteamUserStats/GetSchemaForGame/v2`
+  - 도전과제 내부 이름, 표시 이름, 설명, 아이콘, 숨김 여부 조회
+  - `STEAM_API_KEY`가 필요하므로 `server/steamProxy.js`에서만 호출합니다.
 
-Steam API Key가 필요한 기능은 브라우저에 키가 노출될 수 있으므로 이번 1차 구현에서는 제외했습니다. 실제 `.env` 파일은 `.gitignore`에 포함되어 있어 커밋하지 않습니다.
+프론트엔드는 `/api/steam/achievements?appid=...`만 호출합니다. 실제 `.env` 파일은 `.gitignore`에 포함되어 있어 커밋하지 않습니다.
 
 ## 실행 방법
 
+`.env`에 Steam Web API Key를 넣습니다.
+
+```env
+STEAM_API_KEY=발급받은_키
+```
+
+의존성을 설치합니다.
+
 ```bash
 npm install
+```
+
+터미널 1에서 백엔드 프록시를 실행합니다.
+
+```bash
+npm run dev:api
+```
+
+터미널 2에서 Vite 개발 서버를 실행합니다.
+
+```bash
 npm run dev
 ```
 

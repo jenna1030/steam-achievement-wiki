@@ -43,18 +43,18 @@ export function GameDetailPage() {
   } = useSteamAchievementPercentagesQuery(game?.steamAppId ?? Number.NaN)
 
   const mergedAchievements = useMemo(
-    () => mergeSteamAchievements(gameAchievements, steamAchievements),
-    [gameAchievements, steamAchievements],
+    () => mergeSteamAchievements(gameAchievements, steamAchievements, gameIdNumber),
+    [gameAchievements, gameIdNumber, steamAchievements],
   )
   const steamMatchCount = useMemo(
     () => countSteamAchievementMatches(gameAchievements, steamAchievements),
     [gameAchievements, steamAchievements],
   )
   const apiStatusMessage = isSteamError
-    ? `Steam API 연결에 실패해 기본 데이터 ${gameAchievements.length}개를 표시합니다.`
+    ? `백엔드 프록시 또는 Steam API 연결에 실패해 기본 데이터 ${gameAchievements.length}개를 표시합니다.`
     : isSteamSuccess
-      ? `Steam API 달성률 ${steamMatchCount}개를 기존 도전과제에 반영했습니다.`
-      : '기본 도전과제 데이터를 먼저 표시하고, Steam API 응답이 오면 달성률을 반영합니다.'
+      ? `Steam 도전과제 ${steamAchievements.length}개를 불러왔고, 기존 공략 데이터 ${steamMatchCount}개와 매칭했습니다.`
+      : '기본 도전과제 데이터를 먼저 표시하고, 백엔드 프록시 응답이 오면 Steam 이름, 설명, 달성률을 함께 반영합니다.'
   const achievementTags = useMemo(
     () => getAchievementTags(mergedAchievements),
     [mergedAchievements],
@@ -131,15 +131,15 @@ export function GameDetailPage() {
           <p className="eyebrow">Steam API</p>
           <h2>공개 도전과제 달성률 연결 테스트</h2>
           <p className="muted">
-            Vite 개발 서버 프록시를 통해 Steam 공개 API에서 글로벌 달성률을
-            받아오고, 매칭되는 항목은 도전과제 목록의 달성률에 반영합니다.
+            로컬 백엔드 프록시가 Steam schema API와 글로벌 달성률 API를 함께
+            호출한 뒤, 내부 이름 기준으로 합쳐 도전과제 목록에 반영합니다.
           </p>
           <p className="muted">{apiStatusMessage}</p>
         </div>
         <div>
           {isSteamFetching && <span>연결 확인 중</span>}
           {isSteamSuccess && (
-            <strong>{steamMatchCount}개 달성률 반영</strong>
+            <strong>{steamAchievements.length}개 Steam 항목</strong>
           )}
           {isSteamError && <strong>연결 실패</strong>}
           {!isSteamFetching && !isSteamError && !isSteamSuccess && (
