@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { ErrorState } from '../components/common/ErrorState'
+import { LoadingState } from '../components/common/LoadingState'
 import { GameCard } from '../components/game/GameCard'
 import { GameSearchForm } from '../components/search/GameSearchForm'
-import { games } from '../mocks/games'
+import { useGamesQuery } from '../hooks/useGamesQuery'
 import { useLibraryStore } from '../stores/libraryStore'
 import type { GameSearchFilters } from '../types/search'
 import { filterGames, getGameGenres } from '../utils/gameFilters'
@@ -19,11 +21,12 @@ export function GameSearchPage() {
   const recentSearches = useLibraryStore((state) => state.recentSearches)
   const toggleFavoriteGame = useLibraryStore((state) => state.toggleFavoriteGame)
   const addRecentSearch = useLibraryStore((state) => state.addRecentSearch)
+  const { data: games = [], isError, isLoading } = useGamesQuery()
 
-  const genres = useMemo(() => getGameGenres(games), [])
+  const genres = useMemo(() => getGameGenres(games), [games])
   const filteredGames = useMemo(
     () => filterGames(games, filters),
-    [filters],
+    [filters, games],
   )
 
   return (
@@ -37,59 +40,67 @@ export function GameSearchPage() {
         </p>
       </section>
 
-      <GameSearchForm
-        filters={filters}
-        genres={genres}
-        resultCount={filteredGames.length}
-        onChange={setFilters}
-        onSubmit={() => addRecentSearch(filters.query)}
-      />
+      {isLoading && <LoadingState message="게임 목록을 불러오는 중입니다." />}
+      {isError && <ErrorState />}
+      {!isLoading && !isError && (
+        <>
+          <GameSearchForm
+            filters={filters}
+            genres={genres}
+            resultCount={filteredGames.length}
+            onChange={setFilters}
+            onSubmit={() => addRecentSearch(filters.query)}
+          />
 
-      <section className="search-summary" aria-label="검색 요약">
-        <div>
-          <strong>{favoriteGameIds.length}</strong>
-          <span>관심 게임</span>
-        </div>
-        <div>
-          <strong>{recentSearches.length}</strong>
-          <span>최근 검색</span>
-        </div>
-      </section>
+          <section className="search-summary" aria-label="검색 요약">
+            <div>
+              <strong>{favoriteGameIds.length}</strong>
+              <span>관심 게임</span>
+            </div>
+            <div>
+              <strong>{recentSearches.length}</strong>
+              <span>최근 검색</span>
+            </div>
+          </section>
 
-      {recentSearches.length > 0 && (
-        <section className="recent-searches" aria-label="최근 검색어">
-          <strong>최근 검색어</strong>
-          <div>
-            {recentSearches.map((query) => (
-              <button
-                className="chip-button"
-                key={query}
-                type="button"
-                onClick={() => setFilters({ ...filters, query })}
-              >
-                {query}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+          {recentSearches.length > 0 && (
+            <section className="recent-searches" aria-label="최근 검색어">
+              <strong>최근 검색어</strong>
+              <div>
+                {recentSearches.map((query) => (
+                  <button
+                    className="chip-button"
+                    key={query}
+                    type="button"
+                    onClick={() => setFilters({ ...filters, query })}
+                  >
+                    {query}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
-      {filteredGames.length > 0 ? (
-        <section className="game-grid">
-          {filteredGames.map((game) => (
-            <GameCard
-              game={game}
-              isFavorite={favoriteGameIds.includes(game.id)}
-              key={game.id}
-              onToggleFavorite={toggleFavoriteGame}
-            />
-          ))}
-        </section>
-      ) : (
-        <section className="empty-state">
-          <h2>검색 결과가 없습니다.</h2>
-          <p className="muted">검색어를 줄이거나 장르 필터를 전체로 바꿔보세요.</p>
-        </section>
+          {filteredGames.length > 0 ? (
+            <section className="game-grid">
+              {filteredGames.map((game) => (
+                <GameCard
+                  game={game}
+                  isFavorite={favoriteGameIds.includes(game.id)}
+                  key={game.id}
+                  onToggleFavorite={toggleFavoriteGame}
+                />
+              ))}
+            </section>
+          ) : (
+            <section className="empty-state">
+              <h2>검색 결과가 없습니다.</h2>
+              <p className="muted">
+                검색어를 줄이거나 장르 필터를 전체로 바꿔보세요.
+              </p>
+            </section>
+          )}
+        </>
       )}
     </main>
   )

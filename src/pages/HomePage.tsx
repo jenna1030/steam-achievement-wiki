@@ -1,7 +1,9 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { easyAchievements } from '../mocks/achievements'
-import { featuredGames } from '../mocks/games'
+import { ErrorState } from '../components/common/ErrorState'
+import { LoadingState } from '../components/common/LoadingState'
+import { useFeaturedGamesQuery } from '../hooks/useGamesQuery'
 
 const roadmapItems = [
   '게임 검색과 관심 게임 등록',
@@ -13,6 +15,11 @@ const roadmapItems = [
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
+  const {
+    data: featuredGames = [],
+    isError: isFeaturedGamesError,
+    isLoading: isFeaturedGamesLoading,
+  } = useFeaturedGamesQuery()
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -76,30 +83,34 @@ export function HomePage() {
           <p className="eyebrow">Featured Games</p>
           <h2>도전과제를 확인할 게임</h2>
         </div>
-        <div className="game-grid">
-          {featuredGames.map((game) => (
-            <article className="game-card" key={game.id}>
-              <img src={game.image} alt={`${game.title} 대표 이미지`} />
-              <div className="game-card-body">
-                <p>{game.genre}</p>
-                <h3>{game.title}</h3>
-                <dl>
-                  <div>
-                    <dt>도전과제</dt>
-                    <dd>{game.achievementCount}개</dd>
-                  </div>
-                  <div>
-                    <dt>평균 달성률</dt>
-                    <dd>{game.averageRate}%</dd>
-                  </div>
-                </dl>
-                <Link className="text-link" to={`/games/${game.id}`}>
-                  상세 보기
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+        {isFeaturedGamesLoading && <LoadingState message="인기 게임을 불러오는 중입니다." />}
+        {isFeaturedGamesError && <ErrorState />}
+        {!isFeaturedGamesLoading && !isFeaturedGamesError && (
+          <div className="game-grid">
+            {featuredGames.map((game) => (
+              <article className="game-card" key={game.id}>
+                <img src={game.image} alt={`${game.title} 대표 이미지`} />
+                <div className="game-card-body">
+                  <p>{game.genre}</p>
+                  <h3>{game.title}</h3>
+                  <dl>
+                    <div>
+                      <dt>도전과제</dt>
+                      <dd>{game.achievementCount}개</dd>
+                    </div>
+                    <div>
+                      <dt>평균 달성률</dt>
+                      <dd>{game.averageRate}%</dd>
+                    </div>
+                  </dl>
+                  <Link className="text-link" to={`/games/${game.id}`}>
+                    상세 보기
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="section split-section" id="achievements">
