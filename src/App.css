@@ -311,12 +311,112 @@ dd {
   border-radius: 8px;
 }
 
+.search-toolbar {
+  grid-template-columns: minmax(220px, 1fr) 190px 190px auto 92px;
+  align-items: end;
+}
+
+.search-toolbar label {
+  display: grid;
+  gap: 8px;
+  color: #343941;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.result-count {
+  align-self: center;
+  justify-self: end;
+  margin: 0;
+  color: #5d6673;
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .card-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-top: 18px;
+}
+
+.secondary-button {
+  color: #0f6d58;
+  background: #e8f3ef;
+  border-color: #b9d7cd;
+}
+
+.secondary-button:hover,
+.secondary-button.is-selected {
+  color: #ffffff;
+  background: #0f7a5f;
+  border-color: #0f7a5f;
+}
+
+.search-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 180px));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.search-summary div {
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #ddd6c6;
+  border-radius: 8px;
+}
+
+.search-summary strong,
+.search-summary span {
+  display: block;
+}
+
+.search-summary strong {
+  color: #111317;
+  font-size: 26px;
+}
+
+.search-summary span {
+  margin-top: 4px;
+  color: #69707a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.recent-searches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.recent-searches > strong {
+  color: #343941;
+  font-size: 14px;
+}
+
+.recent-searches > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-button {
+  min-height: 32px;
+  padding: 0 10px;
+  color: #775000;
+  font-size: 13px;
+  background: #fff0c2;
+  border-color: #efd785;
+}
+
+.chip-button:hover {
+  color: #5d3f00;
+  background: #ffe59a;
 }
 
 .split-section {
@@ -501,9 +601,14 @@ dd {
   .split-section,
   .detail-hero,
   .toolbar,
+  .search-toolbar,
   .info-grid,
   .spoiler-columns {
     grid-template-columns: 1fr;
+  }
+
+  .result-count {
+    justify-self: start;
   }
 
   .topbar {

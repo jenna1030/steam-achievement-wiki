@@ -1,7 +1,28 @@
-import { Link } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { GameCard } from '../components/game/GameCard'
+import { GameSearchForm } from '../components/search/GameSearchForm'
 import { games } from '../mocks/games'
+import { useLibraryStore } from '../stores/libraryStore'
+import type { GameSearchFilters } from '../types/search'
+import { filterGames, getGameGenres } from '../utils/gameFilters'
 
 export function GameSearchPage() {
+  const [filters, setFilters] = useState<GameSearchFilters>({
+    query: '',
+    genre: 'all',
+    achievementFilter: 'all',
+  })
+  const favoriteGameIds = useLibraryStore((state) => state.favoriteGameIds)
+  const recentSearches = useLibraryStore((state) => state.recentSearches)
+  const toggleFavoriteGame = useLibraryStore((state) => state.toggleFavoriteGame)
+  const addRecentSearch = useLibraryStore((state) => state.addRecentSearch)
+
+  const genres = useMemo(() => getGameGenres(games), [])
+  const filteredGames = useMemo(
+    () => filterGames(games, filters),
+    [filters],
+  )
+
   return (
     <main className="page">
       <section className="page-header">
@@ -13,44 +34,60 @@ export function GameSearchPage() {
         </p>
       </section>
 
-      <section className="toolbar" aria-label="게임 검색 필터">
-        <input type="search" placeholder="게임명을 입력하세요" />
-        <select defaultValue="all" aria-label="장르 필터">
-          <option value="all">전체 장르</option>
-          <option value="action">액션</option>
-          <option value="simulation">시뮬레이션</option>
-        </select>
-        <button type="button">검색</button>
+      <GameSearchForm
+        filters={filters}
+        genres={genres}
+        resultCount={filteredGames.length}
+        onChange={setFilters}
+        onSubmit={() => addRecentSearch(filters.query)}
+      />
+
+      <section className="search-summary" aria-label="검색 요약">
+        <div>
+          <strong>{favoriteGameIds.length}</strong>
+          <span>관심 게임</span>
+        </div>
+        <div>
+          <strong>{recentSearches.length}</strong>
+          <span>최근 검색</span>
+        </div>
       </section>
 
-      <section className="game-grid">
-        {games.map((game) => (
-          <article className="game-card" key={game.id}>
-            <img src={game.image} alt={`${game.title} 대표 이미지`} />
-            <div className="game-card-body">
-              <p>{game.genre}</p>
-              <h2>{game.title}</h2>
-              <p className="muted">{game.description}</p>
-              <dl>
-                <div>
-                  <dt>도전과제</dt>
-                  <dd>{game.achievementCount}개</dd>
-                </div>
-                <div>
-                  <dt>평균 달성률</dt>
-                  <dd>{game.averageRate}%</dd>
-                </div>
-              </dl>
-              <div className="card-actions">
-                <button type="button">관심 게임</button>
-                <Link className="text-link" to={`/games/${game.id}`}>
-                  상세 보기
-                </Link>
-              </div>
-            </div>
-          </article>
-        ))}
-      </section>
+      {recentSearches.length > 0 && (
+        <section className="recent-searches" aria-label="최근 검색어">
+          <strong>최근 검색어</strong>
+          <div>
+            {recentSearches.map((query) => (
+              <button
+                className="chip-button"
+                key={query}
+                type="button"
+                onClick={() => setFilters({ ...filters, query })}
+              >
+                {query}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {filteredGames.length > 0 ? (
+        <section className="game-grid">
+          {filteredGames.map((game) => (
+            <GameCard
+              game={game}
+              isFavorite={favoriteGameIds.includes(game.id)}
+              key={game.id}
+              onToggleFavorite={toggleFavoriteGame}
+            />
+          ))}
+        </section>
+      ) : (
+        <section className="empty-state">
+          <h2>검색 결과가 없습니다.</h2>
+          <p className="muted">검색어를 줄이거나 장르 필터를 전체로 바꿔보세요.</p>
+        </section>
+      )}
     </main>
   )
 }
