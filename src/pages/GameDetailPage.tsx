@@ -13,7 +13,7 @@ import {
   getAchievementTags,
   sortAchievements,
 } from '../utils/achievementFilters'
-import { mergeSteamAchievementPercentages } from '../utils/steamAchievements'
+import { mergeSteamAchievements } from '../utils/steamAchievements'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
@@ -40,8 +40,8 @@ export function GameDetailPage() {
   } = useSteamAchievementPercentagesQuery(game?.steamAppId ?? Number.NaN)
 
   const mergedAchievements = useMemo(
-    () => mergeSteamAchievementPercentages(gameAchievements, steamAchievements),
-    [gameAchievements, steamAchievements],
+    () => mergeSteamAchievements(gameAchievements, steamAchievements, gameIdNumber),
+    [gameAchievements, gameIdNumber, steamAchievements],
   )
   const achievementTags = useMemo(
     () => getAchievementTags(mergedAchievements),

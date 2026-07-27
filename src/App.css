@@ -300,6 +300,13 @@ dd {
   text-decoration: underline;
 }
 
+.disabled-link {
+  display: inline-flex;
+  margin-top: 16px;
+  color: #69707a;
+  font-weight: 900;
+}
+
 .toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 180px auto;

@@ -8,6 +8,7 @@ export type AchievementSortOption =
 export interface Achievement {
   id: number
   gameId: number
+  source?: 'curated' | 'steam'
   title: string
   description: string
   steamAchievementName?: string

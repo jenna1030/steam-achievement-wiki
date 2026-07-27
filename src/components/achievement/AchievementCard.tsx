@@ -13,7 +13,9 @@ interface AchievementCardProps {
 }
 
 export function AchievementCard({ achievement }: AchievementCardProps) {
+  const isSteamOnly = achievement.source === 'steam'
   const noticeLabels = [
+    isSteamOnly ? 'Steam API 항목' : null,
     achievement.isHidden ? '숨겨짐' : null,
     achievement.isMissable ? '놓치기 쉬움' : null,
     achievement.requiresSecondRun ? '2회차 필요' : null,
@@ -47,12 +49,20 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
         </div>
         <div>
           <dt>예상 시간</dt>
-          <dd>{achievement.estimatedMinutes}분</dd>
+          <dd>
+            {achievement.estimatedMinutes > 0
+              ? `${achievement.estimatedMinutes}분`
+              : '정보 없음'}
+          </dd>
         </div>
       </dl>
-      <Link className="text-link" to={`/achievements/${achievement.id}`}>
-        상세 보기
-      </Link>
+      {isSteamOnly ? (
+        <span className="disabled-link">상세 정보 준비 중</span>
+      ) : (
+        <Link className="text-link" to={`/achievements/${achievement.id}`}>
+          상세 보기
+        </Link>
+      )}
     </article>
   )
 }
