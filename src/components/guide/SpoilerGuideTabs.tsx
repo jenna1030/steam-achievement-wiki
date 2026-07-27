@@ -31,6 +31,9 @@ interface SpoilerGuideTabsProps {
 
 export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
   const [selectedLevel, setSelectedLevel] = useState<SpoilerLevel>('hint')
+  const visibleSpoilerOptions = guide.hasSpoiler
+    ? spoilerOptions
+    : spoilerOptions.filter((option) => option.level !== 'spoiler')
   const selectedOption = spoilerOptions.find(
     (option) => option.level === selectedLevel,
   )
@@ -65,7 +68,7 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
       )}
 
       <div className="spoiler-tab-list" role="tablist" aria-label="공략 공개 단계">
-        {spoilerOptions.map((option) => (
+        {visibleSpoilerOptions.map((option) => (
           <button
             className={
               option.level === selectedLevel

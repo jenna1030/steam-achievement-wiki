@@ -805,6 +805,78 @@ dd {
   box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
 }
 
+.action-panel,
+.vote-panel,
+.checklist-card {
+  background: #ffffff;
+  border: 1px solid #ddd6c6;
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
+}
+
+.action-panel,
+.vote-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+}
+
+.action-panel h2,
+.vote-panel h2 {
+  margin-bottom: 8px;
+  font-size: 26px;
+}
+
+.vote-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.vote-button {
+  display: grid;
+  gap: 3px;
+  min-height: 78px;
+  color: #0f6d58;
+  background: #e8f3ef;
+  border-color: #b9d7cd;
+}
+
+.vote-button:hover,
+.vote-button.is-selected {
+  color: #ffffff;
+  background: #0f7a5f;
+  border-color: #0f7a5f;
+}
+
+.vote-button strong,
+.vote-button small {
+  font-weight: 900;
+}
+
+.checklist-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+  gap: 18px;
+  padding: 18px;
+}
+
+.checklist-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.checklist-controls label {
+  display: grid;
+  gap: 8px;
+  color: #343941;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .api-status-panel h2 {
   margin-bottom: 8px;
   font-size: 26px;
@@ -878,6 +950,18 @@ dd {
   gap: 14px;
 }
 
+.form-checkbox {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.form-note {
+  padding: 12px 14px;
+  color: #5d6673;
+  background: #f7f5ee;
+  border: 1px solid #e5dece;
+  border-radius: 8px;
+}
+
 @media (max-width: 900px) {
   .topbar,
   .hero-section,
@@ -894,7 +978,11 @@ dd {
   .spoiler-tab-list,
   .guide-detail-grid,
   .steam-app-panel,
-  .form-grid {
+  .form-grid,
+  .action-panel,
+  .vote-panel,
+  .vote-options,
+  .checklist-card {
     grid-template-columns: 1fr;
   }
 

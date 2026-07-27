@@ -8,6 +8,7 @@ export interface AchievementGuide {
   author: string
   hint: string
   detail: string
+  hasSpoiler: boolean
   spoiler: string
   conditions: string[]
   supplies: string[]
@@ -26,6 +27,7 @@ export type GuideFormValues = Pick<
   | 'title'
   | 'hint'
   | 'detail'
+  | 'hasSpoiler'
   | 'spoiler'
   | 'difficulty'
   | 'estimatedMinutes'

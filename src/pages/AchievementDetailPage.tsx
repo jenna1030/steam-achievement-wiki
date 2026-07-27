@@ -1,8 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
 import { AchievementMetaPanel } from '../components/achievement/AchievementMetaPanel'
+import { ChecklistButton } from '../components/checklist/ChecklistButton'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { SpoilerGuideTabs } from '../components/guide/SpoilerGuideTabs'
+import { DifficultyVote } from '../components/vote/DifficultyVote'
 import {
   useAchievementDetailQuery,
   useAchievementGuidesQuery,
@@ -74,6 +76,20 @@ export function AchievementDetailPage() {
       </section>
 
       <AchievementMetaPanel achievement={achievement} />
+
+      <section className="action-panel">
+        <div>
+          <p className="eyebrow">Planner</p>
+          <h2>이 도전과제 관리하기</h2>
+          <p className="muted">
+            진행할 도전과제로 저장하거나 완료 상태를 체크리스트에서 관리할 수
+            있습니다.
+          </p>
+        </div>
+        <ChecklistButton achievementId={achievement.id} />
+      </section>
+
+      <DifficultyVote achievementId={achievement.id} />
 
       <section className="section embedded-section">
         <div className="section-heading">

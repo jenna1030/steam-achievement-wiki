@@ -16,12 +16,13 @@ export function GuideForm({
   defaultGuide,
   onSubmit,
 }: GuideFormProps) {
-  const { handleSubmit, register } = useForm<GuideFormValues>({
+  const { handleSubmit, register, watch } = useForm<GuideFormValues>({
     defaultValues: {
       achievementId: defaultGuide?.achievementId ?? defaultAchievementId,
       title: defaultGuide?.title ?? '',
       hint: defaultGuide?.hint ?? '',
       detail: defaultGuide?.detail ?? '',
+      hasSpoiler: defaultGuide?.hasSpoiler ?? false,
       spoiler: defaultGuide?.spoiler ?? '',
       difficulty: defaultGuide?.difficulty ?? '보통',
       estimatedMinutes: defaultGuide?.estimatedMinutes ?? 30,
@@ -33,9 +34,16 @@ export function GuideForm({
         : '',
     },
   })
+  const hasSpoiler = watch('hasSpoiler')
+  const handleFormSubmit = (values: GuideFormValues) => {
+    onSubmit({
+      ...values,
+      spoiler: values.hasSpoiler ? values.spoiler : '',
+    })
+  }
 
   return (
-    <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
+    <form className="editor-form" onSubmit={handleSubmit(handleFormSubmit)}>
       <label>
         도전과제 ID
         <input type="number" {...register('achievementId', { valueAsNumber: true })} />
@@ -62,13 +70,24 @@ export function GuideForm({
           {...register('detail', { required: true })}
         />
       </label>
-      <label>
-        스포일러 포함 공략
-        <textarea
-          placeholder="결말이나 조건을 포함해 작성하세요"
-          {...register('spoiler', { required: true })}
-        />
+      <label className="checkbox-label form-checkbox">
+        <input type="checkbox" {...register('hasSpoiler')} />
+        스포일러 포함 공략 작성
       </label>
+      {hasSpoiler && (
+        <label>
+          스포일러 포함 공략
+          <textarea
+            placeholder="결말이나 조건을 포함해 작성하세요"
+            {...register('spoiler')}
+          />
+        </label>
+      )}
+      {!hasSpoiler && (
+        <p className="form-note">
+          스포일러가 없는 공략은 힌트와 자세한 공략만 저장됩니다.
+        </p>
+      )}
       <div className="form-grid">
         <label>
           체감 난이도

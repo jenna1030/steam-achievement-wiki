@@ -49,6 +49,7 @@ function createGuideFromValues(
     author: '나',
     hint: values.hint,
     detail: values.detail,
+    hasSpoiler: values.hasSpoiler,
     spoiler: values.spoiler,
     conditions: parseLines(values.conditionsText),
     supplies: parseLines(values.suppliesText),
