@@ -1,7 +1,9 @@
 import { achievements } from '../mocks/achievements'
 import { games } from '../mocks/games'
+import { guides } from '../mocks/guides'
 import type { Achievement } from '../types/achievement'
 import type { Game } from '../types/game'
+import type { AchievementGuide } from '../types/guide'
 
 const MOCK_DELAY_MS = 220
 
@@ -37,4 +39,10 @@ export function fetchAchievementById(
   return delay(
     achievements.find((achievement) => achievement.id === achievementId),
   )
+}
+
+export function fetchGuidesByAchievementId(
+  achievementId: number,
+): Promise<AchievementGuide[]> {
+  return delay(guides.filter((guide) => guide.achievementId === achievementId))
 }

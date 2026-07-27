@@ -1,13 +1,44 @@
 import { Link, useParams } from 'react-router-dom'
-import { achievements } from '../mocks/achievements'
-import { guides } from '../mocks/guides'
-import { games } from '../mocks/games'
+import { AchievementMetaPanel } from '../components/achievement/AchievementMetaPanel'
+import { ErrorState } from '../components/common/ErrorState'
+import { LoadingState } from '../components/common/LoadingState'
+import { SpoilerGuideTabs } from '../components/guide/SpoilerGuideTabs'
+import {
+  useAchievementDetailQuery,
+  useAchievementGuidesQuery,
+} from '../hooks/useAchievementsQuery'
+import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 
 export function AchievementDetailPage() {
   const { achievementId } = useParams()
-  const achievement = achievements.find(
-    (item) => item.id === Number(achievementId),
-  )
+  const achievementIdNumber = Number(achievementId)
+  const {
+    data: achievement,
+    isError: isAchievementError,
+    isLoading: isAchievementLoading,
+  } = useAchievementDetailQuery(achievementIdNumber)
+  const {
+    data: relatedGuides = [],
+    isError: isGuidesError,
+    isLoading: isGuidesLoading,
+  } = useAchievementGuidesQuery(achievementIdNumber)
+  const { data: game } = useGameDetailQuery(achievement?.gameId ?? Number.NaN)
+
+  if (isAchievementLoading) {
+    return (
+      <main className="page">
+        <LoadingState message="도전과제 정보를 불러오는 중입니다." />
+      </main>
+    )
+  }
+
+  if (isAchievementError) {
+    return (
+      <main className="page">
+        <ErrorState />
+      </main>
+    )
+  }
 
   if (!achievement) {
     return (
@@ -22,63 +53,43 @@ export function AchievementDetailPage() {
     )
   }
 
-  const game = games.find((item) => item.id === achievement.gameId)
-  const relatedGuides = guides.filter(
-    (guide) => guide.achievementId === achievement.id,
-  )
-
   return (
     <main className="page">
-      <section className="page-header">
+      <section className="page-header achievement-detail-header">
         <p className="eyebrow">{game?.title ?? 'Achievement'}</p>
         <h1>{achievement.title}</h1>
         <p className="muted">{achievement.description}</p>
+        {game && (
+          <Link className="text-link" to={`/games/${game.id}`}>
+            {game.title} 도전과제 목록으로
+          </Link>
+        )}
       </section>
 
-      <section className="info-grid">
-        <article>
-          <strong>{achievement.globalRate}%</strong>
-          <span>전체 유저 달성률</span>
-        </article>
-        <article>
-          <strong>{achievement.estimatedMinutes}분</strong>
-          <span>예상 소요 시간</span>
-        </article>
-        <article>
-          <strong>{achievement.isMissable ? '주의' : '일반'}</strong>
-          <span>놓치기 쉬움 여부</span>
-        </article>
-      </section>
+      <AchievementMetaPanel achievement={achievement} />
 
       <section className="section embedded-section">
         <div className="section-heading">
           <p className="eyebrow">Guides</p>
           <h2>스포일러 단계별 공략</h2>
+          <p className="muted">
+            공략을 원하는 만큼만 열어볼 수 있도록 힌트, 자세한 공략, 스포일러
+            포함 단계로 나눴습니다.
+          </p>
         </div>
-        {relatedGuides.length > 0 ? (
+        {isGuidesLoading && <LoadingState message="공략을 불러오는 중입니다." />}
+        {isGuidesError && <ErrorState />}
+        {!isGuidesLoading &&
+          !isGuidesError &&
           relatedGuides.map((guide) => (
-            <article className="guide-card" key={guide.id}>
-              <p>{guide.author}</p>
-              <h3>{guide.title}</h3>
-              <div className="spoiler-columns">
-                <div>
-                  <strong>힌트</strong>
-                  <span>{guide.hint}</span>
-                </div>
-                <div>
-                  <strong>자세한 공략</strong>
-                  <span>{guide.detail}</span>
-                </div>
-                <div>
-                  <strong>스포일러 포함</strong>
-                  <span>{guide.spoiler}</span>
-                </div>
-              </div>
-            </article>
-          ))
-        ) : (
+            <SpoilerGuideTabs guide={guide} key={guide.id} />
+          ))}
+        {!isGuidesLoading && !isGuidesError && relatedGuides.length === 0 && (
           <div className="empty-state">
             <h3>아직 등록된 공략이 없습니다.</h3>
+            <p className="muted">
+              이 도전과제의 힌트와 조건을 직접 정리해볼 수 있습니다.
+            </p>
             <Link className="button-link" to="/guides/new">
               공략 작성하기
             </Link>

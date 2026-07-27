@@ -552,7 +552,8 @@ dd {
 .info-grid article,
 .guide-card,
 .empty-state,
-.editor-form {
+.editor-form,
+.meta-panel {
   background: #ffffff;
   border: 1px solid #ddd6c6;
   border-radius: 8px;
@@ -581,12 +582,109 @@ dd {
 }
 
 .guide-card {
+  display: grid;
+  gap: 18px;
   padding: 20px;
 }
 
 .guide-card > p {
   color: #69707a;
   font-weight: 800;
+}
+
+.achievement-detail-header {
+  max-width: 900px;
+}
+
+.meta-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 34px;
+  padding: 20px;
+}
+
+.note-list,
+.guide-detail-grid ul,
+.guide-detail-grid ol {
+  padding-left: 18px;
+  margin: 0;
+  color: #5d6673;
+  line-height: 1.7;
+}
+
+.note-list li + li,
+.guide-detail-grid li + li {
+  margin-top: 6px;
+}
+
+.guide-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+  align-items: start;
+}
+
+.guide-header p {
+  margin-bottom: 8px;
+  color: #69707a;
+  font-weight: 800;
+}
+
+.spoiler-tab-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.spoiler-tab {
+  color: #0f6d58;
+  background: #e8f3ef;
+  border-color: #b9d7cd;
+}
+
+.spoiler-tab:hover,
+.spoiler-tab.is-active {
+  color: #ffffff;
+  background: #0f7a5f;
+  border-color: #0f7a5f;
+}
+
+.spoiler-panel {
+  padding: 18px;
+  background: #f7f5ee;
+  border: 1px solid #e5dece;
+  border-radius: 8px;
+}
+
+.spoiler-panel .muted {
+  margin-bottom: 14px;
+}
+
+.spoiler-panel strong {
+  display: block;
+  color: #171a1f;
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+.guide-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.guide-detail-grid div {
+  padding: 14px;
+  background: #f8faf8;
+  border: 1px solid #dfe5df;
+  border-radius: 8px;
+}
+
+.guide-detail-grid h4 {
+  margin: 0 0 10px;
+  color: #171a1f;
+  font-size: 15px;
 }
 
 .spoiler-columns {
@@ -712,7 +810,11 @@ dd {
   .achievement-toolbar,
   .info-grid,
   .spoiler-columns,
-  .api-status-panel {
+  .api-status-panel,
+  .meta-panel,
+  .guide-header,
+  .spoiler-tab-list,
+  .guide-detail-grid {
     grid-template-columns: 1fr;
   }
 
