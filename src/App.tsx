@@ -1,55 +1,6 @@
-﻿import './App.css'
-
-const featuredGames = [
-  {
-    title: 'Hades II',
-    genre: 'Roguelike Action',
-    achievementCount: 49,
-    averageRate: 34,
-    image:
-      'https://cdn.cloudflare.steamstatic.com/steam/apps/1145350/header.jpg',
-  },
-  {
-    title: 'Stardew Valley',
-    genre: 'Simulation RPG',
-    achievementCount: 49,
-    averageRate: 41,
-    image:
-      'https://cdn.cloudflare.steamstatic.com/steam/apps/413150/header.jpg',
-  },
-  {
-    title: 'Hollow Knight',
-    genre: 'Metroidvania',
-    achievementCount: 63,
-    averageRate: 28,
-    image:
-      'https://cdn.cloudflare.steamstatic.com/steam/apps/367520/header.jpg',
-  },
-]
-
-const easyAchievements = [
-  {
-    title: '첫 탐험의 기록',
-    game: 'Stardew Valley',
-    rate: '82.4%',
-    time: '10분',
-    tags: ['쉬움', '스토리 진행'],
-  },
-  {
-    title: '무기 첫 강화',
-    game: 'Hades II',
-    rate: '67.1%',
-    time: '25분',
-    tags: ['전투', '초보 추천'],
-  },
-  {
-    title: '잊힌 벤치 발견',
-    game: 'Hollow Knight',
-    rate: '58.8%',
-    time: '30분',
-    tags: ['탐험', '놓치기 쉬움'],
-  },
-]
+import './App.css'
+import { easyAchievements } from './mocks/achievements'
+import { featuredGames } from './mocks/games'
 
 const roadmapItems = [
   '게임 검색과 관심 게임 등록',
@@ -77,12 +28,17 @@ function App() {
           <p className="eyebrow">Steam 도전과제 공략 위키</p>
           <h1>깨고 싶은 도전과제를 공략과 체크리스트로 관리하세요.</h1>
           <p className="hero-description">
-            Steam 게임의 도전과제를 살펴보고, 스포일러 단계별 공략과 난이도 투표를 참고해 다음 목표를 정하는 개인 프로젝트입니다.
+            Steam 게임의 도전과제를 살펴보고, 스포일러 단계별 공략과 난이도
+            투표를 참고해 다음 목표를 정하는 개인 프로젝트입니다.
           </p>
           <form className="search-panel" aria-label="게임 검색">
             <label htmlFor="game-search">게임 검색</label>
             <div className="search-row">
-              <input id="game-search" type="search" placeholder="예: Hollow Knight" />
+              <input
+                id="game-search"
+                type="search"
+                placeholder="예: Hollow Knight"
+              />
               <button type="button">검색</button>
             </div>
           </form>
@@ -136,7 +92,8 @@ function App() {
           <p className="eyebrow">Easy Picks</p>
           <h2>가볍게 시작할 도전과제</h2>
           <p className="muted">
-            달성률, 예상 소요 시간, 난이도 투표를 기준으로 추천하는 영역입니다.
+            달성률, 예상 소요 시간, 난이도 투표를 기준으로 추천하는
+            영역입니다.
           </p>
         </div>
         <div className="achievement-list">
