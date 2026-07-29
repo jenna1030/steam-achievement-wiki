@@ -88,9 +88,18 @@ SteamID를 함께 비교한다. 같은 브라우저를 여러 Steam 계정이 �
 TypeScript `strict`는 nullable 값, 함수 인자, 타입 추론의 빈틈을 빌드 전에
 오류로 바꾼다. 자동 테스트는 Vitest로 안정 ID, SteamID별 공략 필터링, 홈 추천
 규칙처럼 사람이 매번 눌러 보기 어려운 순수 로직을 반복 검증한다.
-`npm run check` 하나로 lint, 8개 테스트, strict 빌드가 실행되며 CI도 같은
+`npm run check` 하나로 lint, 13개 테스트, strict 빌드가 실행되며 CI도 같은
 명령을 사용한다. 테스트가 브라우저 시연을 완전히 대신하는 것은 아니므로
 로그인과 무한 스크롤은 별도 수동 점검 대상으로 남긴다.
+
+### localStorage 버전과 런타임 검증
+
+TypeScript 타입은 빌드 시점에만 존재하므로 사용자가 수정했거나 이전 버전에서
+남은 localStorage 값까지 보장하지 못한다. 관심 게임·공략·체크리스트·투표를
+`{ version, data }` 형태로 저장하고, 읽을 때 ID·문자열·enum·숫자 범위를
+검증한다. 기존 비버전 데이터는 자동으로 1버전 형식으로 옮기고, 앱보다 새로운
+버전은 덮어쓰지 않는다. 저장 공간 부족이나 보안 설정으로 `setItem`이 실패해도
+화면 전체가 중단되지 않게 했다.
 
 ### Steam API 레이트 리밋
 
@@ -98,8 +107,10 @@ TypeScript `strict`는 nullable 값, 함수 인자, 타입 추론의 빈틈을 �
 사용한다. 검색은 비용이 커서 Store 검색 20회, 공략 앱 검색 30회로 제한하고
 게임·도전과제·프로필 조회는 60회로 둔다. 모든 Steam fetch에는 12초 타임아웃을
 적용한다. 제한을 넘으면 `429`와 `Retry-After`를 반환한다. 현재 구현은
-인스턴스 메모리 기반이라 Vercel 인스턴스 간 전역 제한은 아니며, 실제 서비스
-규모에서는 Upstash Redis나 Vercel WAF 같은 공유 저장소 기반 제한으로 바꾼다.
+인스턴스 메모리 기반이라 Vercel 인스턴스 간 전역 제한은 아니다. 발표 이후
+지속 운영하지 않는 프론트엔드 프로젝트이므로 분산 제한과 운영 로그는 범위에서
+제외했다. 실제 운영 요구가 생길 때만 Upstash Redis나 Vercel WAF 같은 공유
+저장소 기반 제한으로 바꾼다.
 
 ### 홈 추천의 범위
 
@@ -108,6 +119,54 @@ TypeScript `strict`는 nullable 값, 함수 인자, 타입 추론의 빈틈을 �
 채운다. 추천 점수는 전체 달성률, 예상 시간, 관심 게임 여부, 놓치기 쉬움
 패널티를 사용하며 DLC·멀티플레이 필수 항목은 제외한다. 체감 난이도는 현재
 전체 달성률에서 파생되므로 같은 신호를 두 번 가산하지 않는다.
+
+### 접근성과 오류 복구
+
+주요 화면을 브라우저에서 검사해 폼 레이블, 이미지 대체 텍스트, 제목 계층,
+중복 ID, 색상 대비를 확인했다. 홈의 누락된 `main` 랜드마크를 추가하고 본문
+바로가기 링크, 페이지별 문서 제목, 장르 콤보박스 방향키 조작, 공략 탭의
+WAI-ARIA 키보드 패턴, 폼 오류의 `aria-describedby`와 `role="alert"`를
+보강했다. 예상하지 못한 렌더링 오류는 전역 Error Boundary가 받아 저장 데이터를
+유지한 채 다시 불러오기나 홈 이동을 제공한다.
+
+## BCSD 프론트엔드 트랙 적용
+
+[BCSD Frontend 트랙](https://bcsdlab.com/track/frontend)과
+[개인 학습 보고서](https://temp-coffee.tistory.com/category/%F0%9F%A7%AA%20%EC%BD%9C%EB%93%9C%EB%B8%8C%EB%A3%A8%20%EB%9E%A9/BCSD%20FrontEnd%20Track)를
+기준으로 적용 여부를 정리했다.
+
+| 트랙 주제 | 적용 | 프로젝트 근거 |
+| --- | --- | --- |
+| HTML·CSS·JavaScript·TypeScript | 사용 | 시맨틱 요소, 역할별 CSS, strict TypeScript |
+| HTTP·REST·Fetch·async/await | 사용 | Steam 프록시 API와 비동기 오류 처리 |
+| debounce·loading·skeleton·lazy loading | 사용 | 앱 검색 300ms debounce, 마이페이지 skeleton, 라우트·차트 지연 로딩 |
+| React·컴포넌트·props·state·hooks | 사용 | 함수 컴포넌트와 `useState`, `useEffect`, `useMemo`, `useRef` |
+| React Router DOM | 사용 | SPA 경로, params, location, navigate |
+| 상태 관리 | Zustand 사용 | 관심 게임·공략·체크리스트·투표 |
+| 서버 상태 | TanStack Query 사용 | `useQuery`, `useQueries`, `useInfiniteQuery`, 캐시·로딩·오류 |
+| Suspense·Error Boundary | 사용 | 라우트·차트 fallback과 전역 오류 복구 |
+| 브라우저 저장소·Cookie·Session | 사용 | 버전 localStorage와 서명된 HttpOnly 세션 쿠키 |
+| Vite·npm·package.json | 사용 | 개발·빌드·의존성 관리 |
+| GitHub Actions·CI/CD·Vercel | 사용 | lint·test·strict build와 배포 구성 |
+| 웹 접근성·SEO 기초 | 사용 | landmark, skip link, ARIA, 키보드 조작, 페이지 제목 |
+
+다음 기술은 배우지 않았기 때문이 아니라 현재 설계에 필요하지 않아 선택하지
+않았다.
+
+| 미사용 기술 | 선택 이유 |
+| --- | --- |
+| Tailwind·CSS Module·Styled Components·Emotion | 디자인 토큰과 역할별 일반 CSS 한 방식으로 통일 |
+| Redux Toolkit·Recoil·Jotai | 현재 전역 상태 규모에는 Zustand 하나로 충분 |
+| Context API·useReducer | 전역 변경 로직을 Zustand store로 집중 |
+| SWR·Axios | TanStack Query와 Fetch 조합이 이미 같은 책임을 담당 |
+| Webpack·Next.js·SSR | Vite 기반 SPA·CSR 프로젝트 범위 |
+| JWT·sessionStorage | Steam OpenID 이후 HttpOnly 세션 쿠키와 localStorage 역할 분리 |
+| HOC·Portal·Compound pattern | 현재 UI에 해당 추상화가 필요한 반복 구조가 없음 |
+
+Tailwind는 로그인 방식이 아니라 `className`에 작은 CSS 유틸리티를 조합하는
+스타일링 도구다. Steam OpenID 로그인과는 관계가 없으며, 프로젝트 중간에
+Tailwind를 추가하면 같은 스타일 책임을 두 방식으로 관리하게 되어 오히려
+일관성이 낮아진다.
 
 ## 시연 순서
 
@@ -188,7 +247,7 @@ strict는 “값이 없을 수 있는데 있다고 가정하는 코드” 같은
 - 변경: Store 검색 어댑터 재사용, `ownerSteamId`, 선택 집계와 차트 지연 로딩
 - 설계 근거: 서버/클라이언트 상태 분리, 안정 ID, 3상태 조건 모델
 - 사용자 가치: 같은 검색 결과, 계정별 공략, 빠른 초기 화면과 명확한 집계 상태
-- 품질: strict, Vitest 8개, lint/build CI, 브라우저 주요 흐름 검증
+- 품질: strict, Vitest 13개, lint/test/build CI, 브라우저 접근성 검증
 - API 안전: 12초 타임아웃, 라우트별 레이트 리밋, 입력 범위 제한
 - 배포: 로컬/Vercel 공용 API 처리기와 환경변수 분리
 - 한계: 공략 소유권은 현재 브라우저 범위이고 전역 레이트 리밋은 후속 범위

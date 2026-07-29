@@ -68,8 +68,10 @@ Preview 주소를 `CLIENT_BASE_URL`, `SERVER_BASE_URL`에 함께 설정해야 �
 8. `npm audit`의 React Router RSC 권고와 수정 버전 게시 여부를 다시 확인한다.
 
 현재 레이트 리밋은 IP·라우트별 1분 창을 사용하는 인스턴스 메모리 기반
-안전장치다. Vercel 인스턴스 전체에 공통으로 적용해야 하는 운영 규모에서는
-Upstash Redis나 Vercel WAF처럼 공유 상태를 사용하는 방식으로 교체한다.
+안전장치다. 발표 이후 지속 운영하지 않는 프로젝트 범위에서는 이 수준을
+유지한다. 향후 실제 서비스를 운영해 Vercel 인스턴스 전체에 공통 제한이
+필요해질 때만 Upstash Redis나 Vercel WAF처럼 공유 상태를 사용하는 방식으로
+교체한다.
 
 ## 5. Git 배포 흐름
 
