@@ -714,34 +714,19 @@
   display: grid;
   gap: 4px;
   align-content: center;
-  color: #4f5b77;
-  background: #e9ecf3;
-  border: 4px double #9ca8c1;
-  transition:
-    color 220ms ease,
-    background-color 220ms ease,
-    border-color 220ms ease;
+  color: var(--color-navy);
+  background: #fffaf2;
+  border: 4px double var(--color-red);
 }
 
 .search-guidance strong {
-  color: var(--color-navy);
+  color: var(--color-red);
   font-size: 12px;
-  transition: color 220ms ease;
 }
 
 .search-guidance span {
   font-size: 13px;
   font-weight: 700;
-}
-
-.search-guidance.is-active {
-  color: #33415f;
-  background: #f0f2f7;
-  border: 4px double #a8b2c8;
-}
-
-.search-guidance.is-active strong {
-  color: var(--color-red);
 }
 
 .selected-target-summary {
