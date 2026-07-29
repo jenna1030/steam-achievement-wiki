@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AchievementCard } from '../components/achievement/AchievementCard'
 import { AchievementFilterBar } from '../components/achievement/AchievementFilterBar'
+import { CompletionBadge } from '../components/common/CompletionBadge'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { useAchievementsQuery } from '../hooks/useAchievementsQuery'
@@ -133,8 +134,14 @@ export function GameDetailPage() {
           <h1>{game.title}</h1>
           {playerProgress?.isPerfect && (
             <div className="game-completion-badge">
-              <strong>100% 완료</strong>
-              <span>이 게임의 도전과제를 모두 달성했습니다.</span>
+              <img
+                aria-hidden="true"
+                src="/assets/completion-medal.png"
+              />
+              <div>
+                <strong>100% 완료</strong>
+                <span>이 게임의 도전과제를 모두 달성했습니다.</span>
+              </div>
             </div>
           )}
           <p className="muted">{game.description}</p>
@@ -188,7 +195,7 @@ export function GameDetailPage() {
                 {playerProgress.achievedCount} / {playerProgress.totalCount}
               </strong>
               {playerProgress.isPerfect && (
-                <span className="perfect-game-badge">완전 공략</span>
+                <CompletionBadge label="완전 공략" />
               )}
             </p>
           )}

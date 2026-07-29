@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
+import { CompletionBadge } from '../components/common/CompletionBadge'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useSteamAchievementOverviewQuery } from '../hooks/useSteamPlayerAchievementsQuery'
 import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
@@ -95,7 +96,7 @@ function LibraryGameCard({
                 도전과제 {progress.achievedCount} / {progress.totalCount}
               </span>
               {progress.isPerfect && (
-                <strong className="perfect-game-badge">100% 완료</strong>
+                <CompletionBadge />
               )}
             </div>
           )}
@@ -316,15 +317,22 @@ export function MyPage() {
                   ' (집계 중)'}
               </span>
             </article>
-            <article>
-              <strong>
-                {isAchievementOverviewError
-                  ? '확인 불가'
-                  : `${perfectGameCount}${
-                      isAchievementOverviewComplete ? '' : '+'
-                    }`}
-              </strong>
-              <span>도전과제 100% 완료 게임</span>
+            <article className="completion-summary-card">
+              <img
+                aria-hidden="true"
+                className="completion-summary-icon"
+                src="/assets/completion-medal.png"
+              />
+              <div>
+                <strong>
+                  {isAchievementOverviewError
+                    ? '확인 불가'
+                    : `${perfectGameCount}${
+                        isAchievementOverviewComplete ? '' : '+'
+                      }`}
+                </strong>
+                <span>완전 공략한 게임</span>
+              </div>
             </article>
             <article>
               <strong>
