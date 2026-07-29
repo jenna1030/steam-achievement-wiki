@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
+import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
 import type { SteamOwnedGame } from '../apis/steamApi'
 import { useAuthStore } from '../stores/authStore'
@@ -35,6 +36,49 @@ function LibrarySkeleton() {
         </article>
       ))}
     </section>
+  )
+}
+
+function getSteamIconUrl(game: SteamOwnedGame) {
+  if (!game.img_icon_url) {
+    return ''
+  }
+
+  return `https://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg`
+}
+
+function LibraryGameCard({ game }: { game: SteamOwnedGame }) {
+  const { data: gameDetail } = useGameDetailQuery(game.appid)
+  const [failedImageUrl, setFailedImageUrl] = useState('')
+  const imageUrl = gameDetail?.image || getSteamIconUrl(game)
+  const canShowImage = imageUrl && failedImageUrl !== imageUrl
+
+  return (
+    <article className="steam-game-card">
+      <Link to={`/games/${game.appid}`}>
+        {canShowImage ? (
+          <img
+            src={imageUrl}
+            alt={`${game.name} 대표 이미지`}
+            decoding="async"
+            loading="lazy"
+            onError={() => setFailedImageUrl(imageUrl)}
+          />
+        ) : (
+          <div
+            className="library-game-image-placeholder"
+            role="img"
+            aria-label={`${game.name} 이미지 없음`}
+          >
+            <span>{game.name.trim().charAt(0).toUpperCase() || '?'}</span>
+          </div>
+        )}
+        <div>
+          <p>플레이 시간 {formatPlaytime(game.playtime_forever)}</p>
+          <h3>{game.name}</h3>
+        </div>
+      </Link>
+    </article>
   )
 }
 
@@ -222,18 +266,7 @@ export function MyPage() {
               </div>
               <section className="steam-game-grid">
                 {visibleGames.map((game) => (
-                  <article className="steam-game-card" key={game.appid}>
-                    <Link to={`/games/${game.appid}`}>
-                      <img
-                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
-                        alt={`${game.name} 대표 이미지`}
-                      />
-                      <div>
-                        <p>플레이 시간 {formatPlaytime(game.playtime_forever)}</p>
-                        <h3>{game.name}</h3>
-                      </div>
-                    </Link>
-                  </article>
+                  <LibraryGameCard game={game} key={game.appid} />
                 ))}
               </section>
               {hasMoreGames && (

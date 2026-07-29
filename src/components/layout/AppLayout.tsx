@@ -71,7 +71,6 @@ export function AppLayout() {
           >
             {user ? '마이페이지' : '로그인하기'}
           </LoginLink>
-          <span>제작 이지현</span>
         </TopbarActions>
       </header>
       <Outlet />
