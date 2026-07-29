@@ -60,6 +60,22 @@
   border-color: var(--color-red);
 }
 
+.header-logout-button {
+  min-height: 36px;
+  padding: 0 12px;
+  color: #dce6ff;
+  font-weight: 900;
+  background: transparent;
+  border: 1px solid rgba(220, 230, 255, 0.58);
+  border-radius: 6px;
+}
+
+.header-logout-button:hover {
+  color: var(--color-navy);
+  background: var(--color-paper);
+  border-color: var(--color-paper);
+}
+
 .nav-link {
   color: #4b5563;
   font-size: 14px;

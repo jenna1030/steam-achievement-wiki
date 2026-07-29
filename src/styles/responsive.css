@@ -21,6 +21,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .steam-profile-identity h1 {
+    font-size: 46px;
+  }
+
 }
 
 @media (max-width: 900px) {
@@ -52,14 +56,15 @@
 
   .profile-panel {
     grid-template-areas:
-      'action'
-      'identity'
-      'completion';
-    grid-template-columns: 1fr;
+      'avatar identity'
+      'completion completion';
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .profile-panel > .secondary-button {
-    justify-self: end;
+  .steam-profile-avatar {
+    width: 112px;
+    height: 112px;
+    align-self: center;
   }
 
   .my-guide-actions {
@@ -121,6 +126,18 @@
 }
 
 @media (max-width: 520px) {
+  .profile-panel {
+    grid-template-areas:
+      'avatar'
+      'identity'
+      'completion';
+    grid-template-columns: 1fr;
+  }
+
+  .steam-profile-avatar {
+    justify-self: start;
+  }
+
   .nav {
     width: 100%;
     overflow-x: auto;

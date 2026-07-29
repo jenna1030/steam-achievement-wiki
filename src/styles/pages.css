@@ -317,21 +317,34 @@
 .profile-panel {
   width: 100%;
   display: grid;
-  grid-template-areas:
-    'identity action'
-    'identity completion';
-  grid-template-columns: minmax(0, 1fr) minmax(380px, 0.85fr);
+  grid-template-areas: 'avatar identity completion';
+  grid-template-columns:
+    auto
+    minmax(220px, 0.7fr)
+    minmax(380px, 1.3fr);
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
   margin-bottom: 28px;
 }
 
 .steam-profile-identity {
   display: grid;
   grid-area: identity;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
+}
+
+.steam-profile-identity > div {
+  grid-row: 1;
+  grid-column: 1;
+  min-width: 0;
+}
+
+.steam-profile-identity h1 {
+  max-width: none;
+  font-size: clamp(48px, 4vw, 64px);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .profile-completion-overview {
@@ -382,13 +395,6 @@
   margin: 7px 0 0;
 }
 
-.profile-completion-action {
-  margin-top: 10px;
-  border-color: rgba(255, 255, 255, 0.72);
-  background: var(--color-paper);
-  color: var(--color-navy);
-}
-
 .profile-completion-track {
   height: 7px;
   margin-top: 9px;
@@ -404,15 +410,13 @@
   border-radius: inherit;
 }
 
-.profile-panel > .secondary-button {
-  grid-area: action;
-  align-self: start;
-  justify-self: end;
-}
-
 .steam-profile-avatar {
-  width: 112px;
-  height: 112px;
+  grid-area: avatar;
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1;
+  align-self: stretch;
+  justify-self: center;
   object-fit: cover;
   background: var(--color-navy);
   border: 3px solid var(--color-navy);

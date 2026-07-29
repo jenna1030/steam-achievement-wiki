@@ -905,6 +905,12 @@ async function fetchPlayerAchievementProgress(key, steamid, appid) {
     })
 
     if (!steamResponse.ok) {
+      if (![400, 403, 404].includes(steamResponse.status)) {
+        throw new Error(
+          `Steam achievement request failed with ${steamResponse.status}.`,
+        )
+      }
+
       return setCacheValue(
         playerAchievementCache,
         cacheKey,
@@ -954,8 +960,10 @@ async function fetchPlayerAchievementProgress(key, steamid, appid) {
       progress,
       PLAYER_ACHIEVEMENT_CACHE_MS,
     )
-  } catch {
-    return createUnsupportedAchievementProgress(appid)
+  } catch (error) {
+    throw error instanceof Error
+      ? error
+      : new Error('Steam achievement request failed.')
   }
 }
 
@@ -1042,13 +1050,22 @@ async function handlePlayerAchievements(request, requestUrl, response) {
     return
   }
 
-  const progress = await fetchPlayerAchievementProgress(
-    authentication.key,
-    authentication.steamid,
-    Number(appid),
-  )
+  try {
+    const progress = await fetchPlayerAchievementProgress(
+      authentication.key,
+      authentication.steamid,
+      Number(appid),
+    )
 
-  sendJson(response, 200, { progress })
+    sendJson(response, 200, { progress })
+  } catch (error) {
+    sendJson(response, 502, {
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Could not fetch the Steam achievement progress.',
+    })
+  }
 }
 
 async function handleAchievementOverview(request, requestUrl, response) {

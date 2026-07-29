@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 
 const navItems = [
@@ -9,7 +9,9 @@ const navItems = [
 ]
 
 export function AppLayout() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
 
   return (
     <div className="app-shell">
@@ -43,6 +45,17 @@ export function AppLayout() {
           >
             {user ? '마이페이지' : '로그인하기'}
           </NavLink>
+          {user && (
+            <button
+              className="header-logout-button"
+              type="button"
+              onClick={() => {
+                void logout().then(() => navigate('/login'))
+              }}
+            >
+              로그아웃
+            </button>
+          )}
         </div>
       </header>
       <div id="main-content" tabIndex={-1}>
