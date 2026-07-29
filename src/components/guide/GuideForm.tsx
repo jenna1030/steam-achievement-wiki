@@ -162,6 +162,12 @@ export function GuideForm({
           <label>
             도전과제 선택
             <select
+              aria-describedby={
+                errors.achievementId
+                  ? 'guide-achievement-error'
+                  : undefined
+              }
+              aria-invalid={Boolean(errors.achievementId)}
               {...register('achievementId', {
                 required: '도전과제를 선택해주세요.',
               })}
@@ -179,6 +185,15 @@ export function GuideForm({
             </select>
           </label>
         </div>
+        {errors.achievementId && (
+          <span
+            className="field-error"
+            id="guide-achievement-error"
+            role="alert"
+          >
+            {errors.achievementId.message}
+          </span>
+        )}
         <div className="target-selection-status">
           <div
             aria-live="polite"
@@ -214,35 +229,44 @@ export function GuideForm({
       <label>
         공략 제목
         <input
+          aria-describedby={errors.title ? 'guide-title-error' : undefined}
           aria-invalid={Boolean(errors.title)}
           type="text"
           placeholder="공략 제목을 입력하세요"
           {...register('title', { required: '공략 제목을 입력해주세요.' })}
         />
         {errors.title && (
-          <span className="field-error">{errors.title.message}</span>
+          <span className="field-error" id="guide-title-error" role="alert">
+            {errors.title.message}
+          </span>
         )}
       </label>
       <label>
         힌트
         <textarea
+          aria-describedby={errors.hint ? 'guide-hint-error' : undefined}
           aria-invalid={Boolean(errors.hint)}
           placeholder="스포일러가 적은 힌트를 작성하세요"
           {...register('hint', { required: '힌트를 입력해주세요.' })}
         />
         {errors.hint && (
-          <span className="field-error">{errors.hint.message}</span>
+          <span className="field-error" id="guide-hint-error" role="alert">
+            {errors.hint.message}
+          </span>
         )}
       </label>
       <label>
         자세한 공략
         <textarea
+          aria-describedby={errors.detail ? 'guide-detail-error' : undefined}
           aria-invalid={Boolean(errors.detail)}
           placeholder="구체적인 진행 방법을 작성하세요"
           {...register('detail', { required: '자세한 공략을 입력해주세요.' })}
         />
         {errors.detail && (
-          <span className="field-error">{errors.detail.message}</span>
+          <span className="field-error" id="guide-detail-error" role="alert">
+            {errors.detail.message}
+          </span>
         )}
       </label>
       <label className="checkbox-label form-checkbox">
@@ -253,6 +277,9 @@ export function GuideForm({
         <label>
           스포일러 포함 공략
           <textarea
+            aria-describedby={
+              errors.spoiler ? 'guide-spoiler-error' : undefined
+            }
             aria-invalid={Boolean(errors.spoiler)}
             placeholder="결말이나 조건을 포함해 작성하세요"
             {...register('spoiler', {
@@ -263,7 +290,13 @@ export function GuideForm({
             })}
           />
           {errors.spoiler && (
-            <span className="field-error">{errors.spoiler.message}</span>
+            <span
+              className="field-error"
+              id="guide-spoiler-error"
+              role="alert"
+            >
+              {errors.spoiler.message}
+            </span>
           )}
         </label>
       )}
@@ -285,6 +318,11 @@ export function GuideForm({
         <label>
           예상 소요 시간
           <input
+            aria-describedby={
+              errors.estimatedMinutes
+                ? 'guide-estimated-minutes-error'
+                : undefined
+            }
             aria-invalid={Boolean(errors.estimatedMinutes)}
             min={1}
             type="number"
@@ -298,7 +336,11 @@ export function GuideForm({
             })}
           />
           {errors.estimatedMinutes && (
-            <span className="field-error">
+            <span
+              className="field-error"
+              id="guide-estimated-minutes-error"
+              role="alert"
+            >
               {errors.estimatedMinutes.message}
             </span>
           )}
@@ -355,6 +397,9 @@ export function GuideForm({
       <label>
         달성 조건
         <textarea
+          aria-describedby={
+            errors.conditionsText ? 'guide-conditions-error' : undefined
+          }
           aria-invalid={Boolean(errors.conditionsText)}
           placeholder="한 줄에 하나씩 작성하세요"
           {...register('conditionsText', {
@@ -362,12 +407,21 @@ export function GuideForm({
           })}
         />
         {errors.conditionsText && (
-          <span className="field-error">{errors.conditionsText.message}</span>
+          <span
+            className="field-error"
+            id="guide-conditions-error"
+            role="alert"
+          >
+            {errors.conditionsText.message}
+          </span>
         )}
       </label>
       <label>
         필요한 준비물
         <textarea
+          aria-describedby={
+            errors.suppliesText ? 'guide-supplies-error' : undefined
+          }
           aria-invalid={Boolean(errors.suppliesText)}
           placeholder="한 줄에 하나씩 작성하세요"
           {...register('suppliesText', {
@@ -375,12 +429,21 @@ export function GuideForm({
           })}
         />
         {errors.suppliesText && (
-          <span className="field-error">{errors.suppliesText.message}</span>
+          <span
+            className="field-error"
+            id="guide-supplies-error"
+            role="alert"
+          >
+            {errors.suppliesText.message}
+          </span>
         )}
       </label>
       <label>
         주의할 점
         <textarea
+          aria-describedby={
+            errors.warningsText ? 'guide-warnings-error' : undefined
+          }
           aria-invalid={Boolean(errors.warningsText)}
           placeholder="한 줄에 하나씩 작성하세요"
           {...register('warningsText', {
@@ -388,12 +451,23 @@ export function GuideForm({
           })}
         />
         {errors.warningsText && (
-          <span className="field-error">{errors.warningsText.message}</span>
+          <span
+            className="field-error"
+            id="guide-warnings-error"
+            role="alert"
+          >
+            {errors.warningsText.message}
+          </span>
         )}
       </label>
       <label>
         추천 진행 순서
         <textarea
+          aria-describedby={
+            errors.recommendedOrderText
+              ? 'guide-recommended-order-error'
+              : undefined
+          }
           aria-invalid={Boolean(errors.recommendedOrderText)}
           placeholder="한 줄에 하나씩 작성하세요"
           {...register('recommendedOrderText', {
@@ -401,7 +475,11 @@ export function GuideForm({
           })}
         />
         {errors.recommendedOrderText && (
-          <span className="field-error">
+          <span
+            className="field-error"
+            id="guide-recommended-order-error"
+            role="alert"
+          >
             {errors.recommendedOrderText.message}
           </span>
         )}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import type { AchievementGuide, SpoilerLevel } from '../../types/guide'
 
@@ -50,6 +50,38 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
     guide.isMissable ? '놓치기 쉬움' : null,
     guide.requiresSecondRun ? '2회차 필요' : null,
   ].filter((notice): notice is string => Boolean(notice))
+  const panelId = `guide-${guide.id}-panel`
+  const selectedTabId = `guide-${guide.id}-${selectedLevel}-tab`
+
+  const handleTabKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) => {
+    const lastIndex = visibleSpoilerOptions.length - 1
+    let nextIndex: number | null = null
+
+    if (event.key === 'ArrowRight') {
+      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1
+    } else if (event.key === 'Home') {
+      nextIndex = 0
+    } else if (event.key === 'End') {
+      nextIndex = lastIndex
+    }
+
+    if (nextIndex === null) {
+      return
+    }
+
+    event.preventDefault()
+    const nextOption = visibleSpoilerOptions[nextIndex]
+
+    setSelectedLevel(nextOption.level)
+    document
+      .getElementById(`guide-${guide.id}-${nextOption.level}-tab`)
+      ?.focus()
+  }
 
   return (
     <article className="guide-card">
@@ -93,7 +125,7 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
       )}
 
       <div className="spoiler-tab-list" role="tablist" aria-label="공략 공개 단계">
-        {visibleSpoilerOptions.map((option) => (
+        {visibleSpoilerOptions.map((option, index) => (
           <button
             className={
               option.level === selectedLevel
@@ -101,17 +133,27 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
                 : 'spoiler-tab'
             }
             key={option.level}
+            id={`guide-${guide.id}-${option.level}-tab`}
             type="button"
             role="tab"
+            aria-controls={panelId}
             aria-selected={option.level === selectedLevel}
+            tabIndex={option.level === selectedLevel ? 0 : -1}
             onClick={() => setSelectedLevel(option.level)}
+            onKeyDown={(event) => handleTabKeyDown(event, index)}
           >
             {option.label}
           </button>
         ))}
       </div>
 
-      <section className="spoiler-panel" role="tabpanel">
+      <section
+        aria-labelledby={selectedTabId}
+        className="spoiler-panel"
+        id={panelId}
+        role="tabpanel"
+        tabIndex={0}
+      >
         <p className="eyebrow">{selectedOption?.label}</p>
         <p className="muted">{selectedOption?.helper}</p>
         <strong>{guide[selectedLevel]}</strong>

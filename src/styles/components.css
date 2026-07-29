@@ -37,6 +37,13 @@
   padding: 42px clamp(20px, 5vw, 72px);
 }
 
+.fatal-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
 .page {
   padding: clamp(28px, 5vw, 64px) clamp(20px, 5vw, 72px) 72px;
 }
@@ -212,6 +219,7 @@ dd {
 }
 
 .genre-combobox-option:hover,
+.genre-combobox-option.is-active,
 .genre-combobox-option[aria-selected='true'] {
   color: var(--color-panel);
   background: var(--color-blue);

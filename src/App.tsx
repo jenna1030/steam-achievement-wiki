@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoadingState } from './components/common/LoadingState'
@@ -57,7 +57,32 @@ const NotFoundPage = lazy(() =>
   })),
 )
 
+function getDocumentTitle(pathname: string) {
+  const pageName = pathname.startsWith('/achievements/')
+    ? '도전과제 상세'
+    : pathname.startsWith('/games/')
+      ? '게임 상세'
+      : pathname === '/games'
+        ? '게임 검색'
+        : pathname === '/guides/new'
+          ? '공략 작성'
+          : pathname === '/checklist'
+            ? '체크리스트'
+            : pathname === '/login'
+              ? '로그인'
+              : pathname === '/mypage/guides'
+                ? '내 공략'
+                : pathname === '/mypage'
+                  ? '마이페이지'
+                  : pathname === '/'
+                    ? '홈'
+                    : '페이지를 찾을 수 없음'
+
+  return `${pageName} | Steam 도전과제 위키`
+}
+
 function App() {
+  const location = useLocation()
   const hydrateAuth = useAuthStore((state) => state.hydrate)
   const claimLegacyGuides = useGuideStore((state) => state.claimLegacyGuides)
 
@@ -68,6 +93,10 @@ function App() {
       }
     })
   }, [claimLegacyGuides, hydrateAuth])
+
+  useEffect(() => {
+    document.title = getDocumentTitle(location.pathname)
+  }, [location.pathname])
 
   return (
     <Suspense

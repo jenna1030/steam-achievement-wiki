@@ -18,6 +18,7 @@ export function GameSearchForm({
 }: GameSearchFormProps) {
   const [genreSearchQuery, setGenreSearchQuery] = useState('')
   const [isGenreListOpen, setIsGenreListOpen] = useState(false)
+  const [activeGenreIndex, setActiveGenreIndex] = useState(0)
   const visibleClassifications = useMemo(() => {
     const normalizedQuery = genreSearchQuery.trim().toLocaleLowerCase('ko')
     return normalizedQuery
@@ -26,6 +27,13 @@ export function GameSearchForm({
         )
       : classifications
   }, [classifications, genreSearchQuery])
+  const genreOptions = useMemo(
+    () => [
+      ...(!genreSearchQuery.trim() ? ['all'] : []),
+      ...visibleClassifications,
+    ],
+    [genreSearchQuery, visibleClassifications],
+  )
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -35,6 +43,7 @@ export function GameSearchForm({
     onChange({ ...filters, genre: classification })
     setGenreSearchQuery(classification === 'all' ? '' : classification)
     setIsGenreListOpen(false)
+    setActiveGenreIndex(0)
   }
   const handleGenreBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (
@@ -70,6 +79,12 @@ export function GameSearchForm({
           aria-autocomplete="list"
           aria-controls="genre-combobox-list"
           aria-expanded={isGenreListOpen}
+          aria-haspopup="listbox"
+          aria-activedescendant={
+            isGenreListOpen && genreOptions.length > 0
+              ? `genre-combobox-option-${activeGenreIndex}`
+              : undefined
+          }
           value={genreSearchQuery}
           placeholder={
             filters.genre === 'all'
@@ -79,10 +94,12 @@ export function GameSearchForm({
           onChange={(event) => {
             setGenreSearchQuery(event.target.value)
             setIsGenreListOpen(true)
+            setActiveGenreIndex(0)
           }}
           onFocus={() => {
             setGenreSearchQuery('')
             setIsGenreListOpen(true)
+            setActiveGenreIndex(0)
           }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -90,14 +107,39 @@ export function GameSearchForm({
               setGenreSearchQuery(
                 filters.genre === 'all' ? '' : filters.genre,
               )
+              setActiveGenreIndex(0)
+              return
+            }
+
+            if (event.key === 'ArrowDown' && genreOptions.length > 0) {
+              event.preventDefault()
+              setIsGenreListOpen(true)
+              setActiveGenreIndex((currentIndex) =>
+                currentIndex >= genreOptions.length - 1
+                  ? 0
+                  : currentIndex + 1,
+              )
+              return
+            }
+
+            if (event.key === 'ArrowUp' && genreOptions.length > 0) {
+              event.preventDefault()
+              setIsGenreListOpen(true)
+              setActiveGenreIndex((currentIndex) =>
+                currentIndex <= 0
+                  ? genreOptions.length - 1
+                  : currentIndex - 1,
+              )
+              return
             }
 
             if (
               event.key === 'Enter' &&
-              visibleClassifications.length === 1
+              isGenreListOpen &&
+              genreOptions[activeGenreIndex]
             ) {
               event.preventDefault()
-              handleClassificationSelect(visibleClassifications[0])
+              handleClassificationSelect(genreOptions[activeGenreIndex])
             }
           }}
         />
@@ -108,27 +150,23 @@ export function GameSearchForm({
             role="listbox"
             aria-label="장르·태그 검색 결과"
           >
-            {!genreSearchQuery.trim() && (
+            {genreOptions.map((classification, index) => (
               <button
-                className="genre-combobox-option"
-                type="button"
-                role="option"
-                aria-selected={filters.genre === 'all'}
-                onClick={() => handleClassificationSelect('all')}
-              >
-                전체 장르·태그
-              </button>
-            )}
-            {visibleClassifications.map((classification) => (
-              <button
-                className="genre-combobox-option"
+                className={`genre-combobox-option${
+                  index === activeGenreIndex ? ' is-active' : ''
+                }`}
+                id={`genre-combobox-option-${index}`}
                 key={classification}
                 type="button"
                 role="option"
                 aria-selected={filters.genre === classification}
+                tabIndex={-1}
                 onClick={() => handleClassificationSelect(classification)}
+                onMouseEnter={() => setActiveGenreIndex(index)}
               >
-                {classification}
+                {classification === 'all'
+                  ? '전체 장르·태그'
+                  : classification}
               </button>
             ))}
             {classifications.length > 0 &&
@@ -157,7 +195,9 @@ export function GameSearchForm({
         </select>
       </label>
       <button type="submit">검색</button>
-      <p className="result-count">{resultCount}개 게임</p>
+      <p aria-live="polite" className="result-count">
+        {resultCount}개 게임
+      </p>
     </form>
   )
 }

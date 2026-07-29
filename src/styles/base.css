@@ -29,3 +29,20 @@ input {
 img {
   max-width: 100%;
 }
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  padding: 10px 14px;
+  color: var(--color-panel);
+  background: var(--color-navy-deep);
+  border: 2px solid var(--color-red);
+  border-radius: 6px;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}

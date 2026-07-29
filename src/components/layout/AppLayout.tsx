@@ -13,6 +13,9 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        본문 바로가기
+      </a>
       <header className="topbar">
         <NavLink className="brand" to="/">
           Achievement Wiki
@@ -42,7 +45,9 @@ export function AppLayout() {
           </NavLink>
         </div>
       </header>
-      <Outlet />
+      <div id="main-content" tabIndex={-1}>
+        <Outlet />
+      </div>
     </div>
   )
 }

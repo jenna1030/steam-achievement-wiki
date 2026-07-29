@@ -53,7 +53,7 @@ export function HomePage() {
   }
 
   return (
-    <>
+    <main>
       <section className="hero-section">
         <div className="hero-copy">
           <p className="eyebrow">Steam 도전과제 공략 위키</p>
@@ -180,6 +180,6 @@ export function HomePage() {
           games={featuredGames}
         />
       </section>
-    </>
+    </main>
   )
 }
