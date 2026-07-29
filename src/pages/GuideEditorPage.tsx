@@ -158,7 +158,7 @@ export function GuideEditorPage() {
   }
 
   return (
-    <main className="page">
+    <main className="page guide-editor-page">
       <section className="page-header">
         <p className="eyebrow">Guide Editor</p>
         <h1>{editingGuide ? '공략 수정' : '공략 작성'}</h1>

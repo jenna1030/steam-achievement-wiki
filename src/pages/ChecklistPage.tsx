@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useChecklistStore } from '../stores/checklistStore'
+import { useGuideStore } from '../stores/guideStore'
 import type { ChecklistStatus } from '../types/checklist'
+import type { SpoilerLevel } from '../types/guide'
 import {
   getAchievementPath,
   getGameIdFromAchievementId,
@@ -13,7 +16,12 @@ const statusOptions: Array<{ value: ChecklistStatus; label: string }> = [
 ]
 
 export function ChecklistPage() {
+  const [expandedGuide, setExpandedGuide] = useState<{
+    achievementId: string
+    level: Extract<SpoilerLevel, 'hint' | 'detail'>
+  } | null>(null)
   const items = useChecklistStore((state) => state.items)
+  const userGuides = useGuideStore((state) => state.userGuides)
   const updateStatus = useChecklistStore((state) => state.updateStatus)
   const updateMemo = useChecklistStore((state) => state.updateMemo)
   const toggleChecklist = useChecklistStore((state) => state.toggleChecklist)
@@ -50,37 +58,109 @@ export function ChecklistPage() {
           {items.map((item) => {
             const gameId =
               item.gameId ?? getGameIdFromAchievementId(item.achievementId)
+            const guide = userGuides.find(
+              (targetGuide) =>
+                targetGuide.achievementId === item.achievementId,
+            )
+            const selectedGuideLevel =
+              expandedGuide?.achievementId === item.achievementId
+                ? expandedGuide.level
+                : null
+            const toggleGuidePreview = (
+              level: Extract<SpoilerLevel, 'hint' | 'detail'>,
+            ) => {
+              setExpandedGuide((current) =>
+                current?.achievementId === item.achievementId &&
+                current.level === level
+                  ? null
+                  : { achievementId: item.achievementId, level },
+              )
+            }
 
             return (
               <article className="checklist-card" key={item.achievementId}>
-                <div className="checklist-achievement-summary">
-                  {item.iconUrl && (
-                    <img src={item.iconUrl} alt="" className="achievement-icon" />
-                  )}
-                  <div>
-                    <p>
-                      {gameId ? `Steam App #${gameId}` : 'Steam 도전과제'}
-                    </p>
-                    <h3>{item.title ?? `도전과제 #${item.achievementId}`}</h3>
-                    <p className="muted">
-                      {item.description ??
-                        '상세 페이지를 열면 최신 Steam 정보를 다시 불러옵니다.'}
-                    </p>
-                    {item.tags && (
-                      <div className="tag-row">
-                        {item.tags.map((tag) => (
-                          <span key={tag}>{tag}</span>
-                        ))}
-                      </div>
+                <div className="checklist-main-column">
+                  <div className="checklist-achievement-summary">
+                    {item.iconUrl && (
+                      <img
+                        src={item.iconUrl}
+                        alt=""
+                        className="achievement-icon"
+                      />
                     )}
-                    {item.notices && item.notices.length > 0 && (
-                      <div className="notice-row">
-                        {item.notices.map((notice) => (
-                          <span key={notice}>{notice}</span>
-                        ))}
-                      </div>
+                    <div>
+                      <p>
+                        {gameId ? `Steam App #${gameId}` : 'Steam 도전과제'}
+                      </p>
+                      <h3>{item.title ?? `도전과제 #${item.achievementId}`}</h3>
+                      <p className="muted">
+                        {item.description ??
+                          '상세 페이지를 열면 최신 Steam 정보를 다시 불러옵니다.'}
+                      </p>
+                      {item.tags && (
+                        <div className="tag-row">
+                          {item.tags.map((tag) => (
+                            <span key={tag}>{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                      {item.notices && item.notices.length > 0 && (
+                        <div className="notice-row">
+                          {item.notices.map((notice) => (
+                            <span key={notice}>{notice}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="checklist-guide-actions">
+                    <button
+                      className={
+                        selectedGuideLevel === 'hint'
+                          ? 'secondary-button is-selected'
+                          : 'secondary-button'
+                      }
+                      disabled={!guide}
+                      title={guide ? undefined : '등록된 공략이 없습니다.'}
+                      type="button"
+                      onClick={() => toggleGuidePreview('hint')}
+                    >
+                      힌트 보기
+                    </button>
+                    <button
+                      className={
+                        selectedGuideLevel === 'detail'
+                          ? 'secondary-button is-selected'
+                          : 'secondary-button'
+                      }
+                      disabled={!guide}
+                      title={guide ? undefined : '등록된 공략이 없습니다.'}
+                      type="button"
+                      onClick={() => toggleGuidePreview('detail')}
+                    >
+                      자세한 공략 보기
+                    </button>
+                    {!guide && (
+                      <Link
+                        className="text-link"
+                        to={`/guides/new?achievementId=${encodeURIComponent(
+                          item.achievementId,
+                        )}`}
+                      >
+                        공략 작성
+                      </Link>
                     )}
                   </div>
+                  {guide && selectedGuideLevel && (
+                    <section className="checklist-guide-preview">
+                      <p className="eyebrow">
+                        {selectedGuideLevel === 'hint'
+                          ? '힌트'
+                          : '자세한 공략'}
+                      </p>
+                      <strong>{guide[selectedGuideLevel]}</strong>
+                    </section>
+                  )}
                 </div>
                 <div className="checklist-controls">
                   <label>
@@ -112,22 +192,24 @@ export function ChecklistPage() {
                     />
                   </label>
                 </div>
-                <div className="card-actions">
+                <footer className="checklist-card-footer">
                   <span className="disabled-link">최근 변경 {item.updatedAt}</span>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => toggleChecklist(item.achievementId)}
-                  >
-                    제거
-                  </button>
-                  <Link
-                    className="text-link"
-                    to={getAchievementPath(item.achievementId)}
-                  >
-                    상세 보기
-                  </Link>
-                </div>
+                  <div>
+                    <Link
+                      className="text-link"
+                      to={getAchievementPath(item.achievementId)}
+                    >
+                      전체 상세 보기
+                    </Link>
+                    <button
+                      className="danger-button"
+                      type="button"
+                      onClick={() => toggleChecklist(item.achievementId)}
+                    >
+                      체크리스트에서 제거
+                    </button>
+                  </div>
+                </footer>
               </article>
             )
           })}

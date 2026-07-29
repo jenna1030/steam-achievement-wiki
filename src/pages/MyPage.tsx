@@ -162,9 +162,17 @@ export function MyPage() {
     (total, progress) => total + progress.achievedCount,
     0,
   )
+  const totalAchievementCount = achievementProgress.reduce(
+    (total, progress) => total + progress.totalCount,
+    0,
+  )
   const perfectGameCount = achievementProgress.filter(
     (progress) => progress.isPerfect,
   ).length
+  const achievementCompletionRate =
+    totalAchievementCount > 0
+      ? Math.round((achievedCount / totalAchievementCount) * 100)
+      : 0
   const isAchievementOverviewComplete =
     !isAchievementOverviewLoading &&
     !isAchievementOverviewError &&
@@ -268,6 +276,40 @@ export function MyPage() {
             )}
           </div>
         </div>
+        <section className="profile-completion-overview">
+          <img
+            aria-hidden="true"
+            src="/assets/completion-medal.png"
+          />
+          <div>
+            <p className="eyebrow">Completion Record</p>
+            <div className="profile-completion-heading">
+              <strong>
+                {isAchievementOverviewError
+                  ? '확인 불가'
+                  : `${achievementCompletionRate}%`}
+              </strong>
+              <span>전체 도전과제 달성률</span>
+            </div>
+            <div
+              aria-label={`전체 도전과제 달성률 ${achievementCompletionRate}%`}
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={achievementCompletionRate}
+              className="profile-completion-track"
+              role="progressbar"
+            >
+              <span style={{ width: `${achievementCompletionRate}%` }} />
+            </div>
+            <p>
+              {achievedCount.toLocaleString()} /{' '}
+              {totalAchievementCount.toLocaleString()}개 달성
+              {!isAchievementOverviewComplete &&
+                !isAchievementOverviewError &&
+                ' · 집계 중'}
+            </p>
+          </div>
+        </section>
         <button
           className="secondary-button"
           type="button"

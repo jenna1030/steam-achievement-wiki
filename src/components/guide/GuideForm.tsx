@@ -120,7 +120,7 @@ export function GuideForm({
             선택합니다.
           </p>
         </div>
-        <div className="form-grid">
+        <div className="target-picker-grid">
           <label>
             Steam 앱 검색
             <input
@@ -129,15 +129,6 @@ export function GuideForm({
               placeholder="예: Hollow Knight 또는 367520"
               onChange={(event) => onGameSearchChange(event.target.value)}
             />
-            <span className="form-note" role="status">
-              {gameSearchQuery.trim().length < 2
-                ? '게임명 또는 appid를 두 글자 이상 입력하면 Steam 앱을 검색합니다.'
-                : isGameSearchLoading
-                  ? 'Steam 앱을 검색하는 중입니다.'
-                  : isGameSearchError
-                    ? '검색하지 못했습니다. API 서버 실행 상태를 확인해주세요.'
-                    : `${gameOptions.length}개 앱을 선택할 수 있습니다.`}
-            </span>
           </label>
           <label>
             Steam 앱 선택
@@ -152,8 +143,6 @@ export function GuideForm({
               ))}
             </select>
           </label>
-        </div>
-        <div className="form-grid">
           <label>
             도전과제 검색
             <input
@@ -176,10 +165,21 @@ export function GuideForm({
             </select>
           </label>
         </div>
-        <p className="form-note">
-          선택됨: {selectedGame?.title ?? '게임 없음'} /{' '}
-          {selectedAchievement?.title ?? '도전과제 없음'}
-        </p>
+        <div className="target-selection-status">
+          <p className="form-note" role="status">
+            {gameSearchQuery.trim().length < 2
+              ? '게임명 또는 appid를 두 글자 이상 입력하면 Steam 앱을 검색합니다.'
+              : isGameSearchLoading
+                ? 'Steam 앱을 검색하는 중입니다.'
+                : isGameSearchError
+                  ? '검색하지 못했습니다. API 서버 실행 상태를 확인해주세요.'
+                  : `${gameOptions.length}개 앱을 선택할 수 있습니다.`}
+          </p>
+          <p className="form-note">
+            선택됨: {selectedGame?.title ?? '게임 없음'} /{' '}
+            {selectedAchievement?.title ?? '도전과제 없음'}
+          </p>
+        </div>
       </section>
       <label>
         공략 제목

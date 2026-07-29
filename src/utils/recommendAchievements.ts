@@ -13,10 +13,11 @@ export function recommendEasyAchievements(
   games: Game[],
   favoriteGameIds: number[],
 ) {
-  const targetGameIds = favoriteGameIds.length > 0 ? favoriteGameIds : games.map((game) => game.id)
+  const gameIds = new Set(games.map((game) => game.id))
+  const favoriteGameIdSet = new Set(favoriteGameIds)
 
   return achievements
-    .filter((achievement) => targetGameIds.includes(achievement.gameId))
+    .filter((achievement) => gameIds.has(achievement.gameId))
     .filter(
       (achievement) =>
         achievement.dlcRequirement !== 'required' &&
@@ -25,10 +26,21 @@ export function recommendEasyAchievements(
     .map((achievement): RecommendedAchievementView => {
       const shortTimeBonus = achievement.estimatedMinutes > 0 && achievement.estimatedMinutes <= 30 ? 18 : 0
       const difficultyBonus = achievement.difficulty === 'easy' ? 20 : achievement.difficulty === 'normal' ? 10 : 0
+      const favoriteGameBonus = favoriteGameIdSet.has(achievement.gameId)
+        ? 12
+        : 0
       const missablePenalty = achievement.isMissable ? -8 : 0
-      const score = achievement.globalRate + shortTimeBonus + difficultyBonus + missablePenalty
+      const score =
+        achievement.globalRate +
+        shortTimeBonus +
+        difficultyBonus +
+        favoriteGameBonus +
+        missablePenalty
       const reason =
-        achievement.estimatedMinutes > 0 && achievement.estimatedMinutes <= 30
+        favoriteGameBonus > 0
+          ? '관심 게임에서 시작하기 좋은 항목'
+          : achievement.estimatedMinutes > 0 &&
+              achievement.estimatedMinutes <= 30
           ? '30분 안에 도전하기 좋은 항목'
           : '달성률과 난이도 기준 추천'
 

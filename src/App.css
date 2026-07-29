@@ -70,9 +70,9 @@
 
 .hero-section {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
   gap: clamp(24px, 5vw, 56px);
-  align-items: stretch;
+  align-items: center;
   padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 72px) 48px;
 }
 
@@ -80,7 +80,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  max-width: 1180px;
+  max-width: 1060px;
 }
 
 .eyebrow {
@@ -109,10 +109,61 @@ h1 {
 }
 
 .hero-section h1 {
-  max-width: 1120px;
+  max-width: 1000px;
   font-size: clamp(42px, 5vw, 72px);
   line-height: 1.12;
   text-wrap: balance;
+}
+
+.hero-search-column {
+  display: grid;
+  gap: 18px;
+  align-content: center;
+  width: 100%;
+  max-width: 560px;
+  justify-self: end;
+  padding: clamp(22px, 3vw, 34px);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  border: 4px double var(--color-red);
+  border-radius: 10px;
+  box-shadow: 12px 12px 0 rgba(16, 25, 54, 0.36);
+}
+
+.hero-search-column h2 {
+  margin-bottom: 10px;
+  font-size: clamp(26px, 2.2vw, 36px);
+}
+
+.hero-search-column .eyebrow {
+  margin-bottom: 8px;
+}
+
+.hero-search-description {
+  margin-bottom: 0;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.hero-search-column .search-panel {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.hero-all-games-link {
+  width: fit-content;
+  color: var(--color-blue);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.hero-all-games-link:hover {
+  color: var(--color-red-deep);
+  text-decoration: underline;
 }
 
 h2 {
@@ -1480,7 +1531,8 @@ dd {
 .profile-panel {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'identity completion action';
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.7fr) auto;
   gap: 18px;
   align-items: center;
   margin-bottom: 28px;
@@ -1488,9 +1540,77 @@ dd {
 
 .steam-profile-identity {
   display: grid;
+  grid-area: identity;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 20px;
   align-items: center;
+}
+
+.profile-completion-overview {
+  display: grid;
+  grid-area: completion;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  color: var(--color-paper);
+  background: var(--color-navy);
+  border: 4px double var(--color-red);
+  border-radius: 8px;
+}
+
+.profile-completion-overview > img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.profile-completion-overview .eyebrow {
+  margin-bottom: 5px;
+  color: #ffbbb5;
+  font-size: 11px;
+}
+
+.profile-completion-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  align-items: baseline;
+}
+
+.profile-completion-heading strong {
+  color: var(--color-paper);
+  font-size: 26px;
+}
+
+.profile-completion-heading span,
+.profile-completion-overview p {
+  color: #dce6ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profile-completion-overview p {
+  margin: 7px 0 0;
+}
+
+.profile-completion-track {
+  height: 7px;
+  margin-top: 9px;
+  overflow: hidden;
+  background: rgba(255, 250, 242, 0.2);
+  border-radius: 999px;
+}
+
+.profile-completion-track span {
+  display: block;
+  height: 100%;
+  background: var(--color-red);
+  border-radius: inherit;
+}
+
+.profile-panel > .secondary-button {
+  grid-area: action;
 }
 
 .steam-profile-avatar {
@@ -1595,6 +1715,12 @@ dd {
   padding: 18px;
 }
 
+.checklist-main-column {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
 .checklist-achievement-summary {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
@@ -1602,9 +1728,63 @@ dd {
   align-items: start;
 }
 
+.checklist-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.checklist-guide-actions button {
+  min-height: 38px;
+  padding-inline: 12px;
+}
+
+.checklist-guide-actions .text-link {
+  margin-top: 0;
+}
+
+.checklist-guide-preview {
+  padding: 16px;
+  background: rgba(232, 237, 248, 0.72);
+  border: 3px double var(--color-navy);
+  border-radius: 8px;
+}
+
+.checklist-guide-preview .eyebrow {
+  margin-bottom: 6px;
+}
+
+.checklist-guide-preview strong {
+  color: var(--color-ink);
+  line-height: 1.7;
+}
+
 .checklist-controls {
   display: grid;
   gap: 12px;
+}
+
+.checklist-card-footer {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line);
+}
+
+.checklist-card-footer .disabled-link,
+.checklist-card-footer .text-link {
+  margin-top: 0;
+}
+
+.checklist-card-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .checklist-controls label {
@@ -1660,10 +1840,16 @@ dd {
 .editor-form {
   display: grid;
   gap: 16px;
-  width: min(100%, 840px);
+  width: min(100%, 1180px);
   box-sizing: border-box;
   margin-inline: auto;
   padding: 22px;
+}
+
+.guide-editor-page .page-header {
+  width: min(100%, 1180px);
+  max-width: none;
+  margin-inline: auto;
 }
 
 .selection-panel {
@@ -1706,6 +1892,29 @@ dd {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.target-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.target-picker-grid input,
+.target-picker-grid select {
+  height: 48px;
+  min-height: 48px;
+}
+
+.target-selection-status {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.target-selection-status .form-note {
+  margin: 0;
 }
 
 .form-checkbox {
@@ -1761,6 +1970,10 @@ dd {
 
 .hero-section .hero-description {
   color: #dce6ff;
+}
+
+.hero-section .hero-search-column .eyebrow {
+  color: var(--color-red);
 }
 
 h1,
@@ -1889,6 +2102,27 @@ button:hover,
   border-color: var(--color-blue);
 }
 
+.secondary-button:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  background: #ece8df;
+  border-color: var(--color-line);
+  opacity: 0.78;
+}
+
+.danger-button {
+  min-height: 38px;
+  color: var(--color-red);
+  background: #fff1ec;
+  border-color: #e9b8aa;
+}
+
+.danger-button:hover {
+  color: var(--color-panel);
+  background: var(--color-red);
+  border-color: var(--color-red);
+}
+
 .chip-button,
 .tag-row span {
   color: #fff9ef;
@@ -1919,6 +2153,37 @@ button:hover,
   background: var(--color-red);
 }
 
+@media (max-width: 1280px) {
+  .hero-section,
+  .split-section {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy {
+    max-width: 1000px;
+  }
+
+  .hero-search-column {
+    max-width: 680px;
+    justify-self: start;
+  }
+
+  .split-section > .section-heading {
+    max-width: 760px;
+  }
+
+  .target-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-panel {
+    grid-template-areas:
+      'identity action'
+      'completion completion';
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
 @media (max-width: 900px) {
   .topbar,
   .hero-section,
@@ -1946,6 +2211,18 @@ button:hover,
   }
 
   .profile-panel {
+    grid-template-areas:
+      'identity'
+      'completion'
+      'action';
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panel > .secondary-button {
+    justify-self: start;
+  }
+
+  .target-selection-status {
     grid-template-columns: 1fr;
   }
 
@@ -1979,6 +2256,11 @@ button:hover,
     grid-template-columns: 56px minmax(0, 1fr);
   }
 
+  .checklist-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .vote-change-actions {
     justify-items: start;
     max-width: none;
@@ -2005,6 +2287,10 @@ button:hover,
   }
 
   .search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .target-picker-grid {
     grid-template-columns: 1fr;
   }
 

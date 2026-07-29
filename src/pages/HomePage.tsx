@@ -59,6 +59,16 @@ export function HomePage() {
             게임 appid를 기준으로 Steam 공개 도전과제와 전체 달성률을 불러오고,
             개인 공략과 진행 상태는 브라우저에 저장하는 개인 프로젝트입니다.
           </p>
+        </div>
+        <aside className="hero-search-column">
+          <div>
+            <p className="eyebrow">Quick Search</p>
+            <h2>찾고 싶은 게임이 있나요?</h2>
+            <p className="hero-search-description">
+              게임명으로 검색하면 Steam AppID 기반 상세 페이지와 도전과제를
+              바로 확인할 수 있습니다.
+            </p>
+          </div>
           <form
             className="search-panel"
             aria-label="게임 검색"
@@ -76,7 +86,10 @@ export function HomePage() {
               <button type="submit">검색</button>
             </div>
           </form>
-        </div>
+          <Link className="hero-all-games-link" to="/games">
+            전체 게임과 장르 검색으로 이동
+          </Link>
+        </aside>
       </section>
 
       <section className="section" id="games">
