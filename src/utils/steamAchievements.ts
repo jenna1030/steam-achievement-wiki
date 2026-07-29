@@ -30,7 +30,6 @@ function createSteamAchievement(
     id: createSteamAchievementId(gameId, steamAchievement.name),
     legacyId: createLegacyAchievementId(gameId, index),
     gameId,
-    source: 'steam',
     title: steamAchievement.displayName || steamAchievement.name,
     description:
       steamAchievement.description ||
@@ -59,66 +58,3 @@ export function mapSteamAchievements(
     createSteamAchievement(achievement, gameId, index + 1),
   )
 }
-
-export function mergeSteamAchievements(
-  achievements: Achievement[],
-  steamAchievements: SteamAchievement[],
-  gameId: number,
-) {
-  const steamAchievementMap = new Map(
-    steamAchievements.map((achievement) => [achievement.name, achievement]),
-  )
-
-  const mappedSteamNames = new Set(
-    achievements
-      .map((achievement) => achievement.steamAchievementName)
-      .filter((name): name is string => Boolean(name)),
-  )
-
-  const curatedAchievements = achievements.map((achievement) => {
-    if (!achievement.steamAchievementName) {
-      return achievement
-    }
-
-    const steamAchievement = steamAchievementMap.get(
-      achievement.steamAchievementName,
-    )
-
-    if (!steamAchievement) {
-      return achievement
-    }
-
-    return {
-      ...achievement,
-      source: achievement.source ?? 'curated',
-      iconUrl: achievement.iconUrl || steamAchievement.icon,
-      globalRate: Number(steamAchievement.percent.toFixed(1)),
-      isHidden: achievement.isHidden || steamAchievement.hidden === 1,
-    }
-  })
-
-  const steamOnlyAchievements = steamAchievements
-    .filter((achievement) => !mappedSteamNames.has(achievement.name))
-    .map((achievement, index) =>
-      createSteamAchievement(achievement, gameId, index + 1),
-    )
-
-  return [...curatedAchievements, ...steamOnlyAchievements]
-}
-
-export function countSteamAchievementMatches(
-  achievements: Achievement[],
-  steamAchievements: SteamAchievement[],
-) {
-  const steamAchievementNames = new Set(
-    steamAchievements.map((achievement) => achievement.name),
-  )
-
-  return achievements.filter(
-    (achievement) =>
-      achievement.steamAchievementName !== undefined &&
-      steamAchievementNames.has(achievement.steamAchievementName),
-  ).length
-}
-
-export const mergeSteamAchievementPercentages = mergeSteamAchievements

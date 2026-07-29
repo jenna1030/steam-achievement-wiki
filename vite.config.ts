@@ -10,11 +10,6 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/steam-api': {
-        target: 'https://api.steampowered.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/steam-api/, ''),
-      },
     },
   },
 })

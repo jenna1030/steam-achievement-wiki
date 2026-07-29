@@ -11,7 +11,6 @@ export interface Achievement {
   id: AchievementId
   legacyId?: number
   gameId: number
-  source?: 'curated' | 'steam'
   title: string
   description: string
   steamAchievementName?: string
@@ -27,13 +26,4 @@ export interface Achievement {
   multiplayerRequirement: RequirementStatus
   platformNotes: string[]
   bugNotes: string[]
-}
-
-export interface RecommendedAchievement {
-  achievementId: AchievementId
-  title: string
-  game: string
-  rate: string
-  time: string
-  tags: string[]
 }

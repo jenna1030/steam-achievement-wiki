@@ -47,11 +47,24 @@ const LIBRARY_CACHE_MS = 1000 * 60 * 10
 const PLAYER_ACHIEVEMENT_CACHE_MS = 1000 * 60 * 15
 const ACHIEVEMENT_OVERVIEW_PAGE_SIZE = 20
 const ACHIEVEMENT_REQUEST_CONCURRENCY = 5
+const STEAM_FETCH_TIMEOUT_MS = 12_000
+const RATE_LIMIT_WINDOW_MS = 60_000
+const STEAM_ROUTE_RATE_LIMITS = new Map([
+  ['/api/steam/store-games', 20],
+  ['/api/steam/apps', 30],
+  ['/api/steam/achievement-overview', 30],
+  ['/api/steam/player-achievements', 60],
+  ['/api/steam/achievements', 60],
+  ['/api/steam/game', 60],
+  ['/api/steam/library', 60],
+  ['/api/steam/profile', 60],
+])
 let steamPopularTagsCache = null
 const steamStoreDetailsCache = new Map()
 const steamProfileCache = new Map()
 const steamLibraryCache = new Map()
 const playerAchievementCache = new Map()
+const rateLimitBuckets = new Map()
 
 function sendJson(response, statusCode, data) {
   response.writeHead(statusCode, {
@@ -75,13 +88,86 @@ function redirect(response, url, headers = {}) {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url)
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(STEAM_FETCH_TIMEOUT_MS),
+  })
 
   if (!response.ok) {
     throw new Error(`Steam API request failed: ${response.status}`)
   }
 
   return response.json()
+}
+
+function getBoundedInteger(value, fallback, minimum, maximum) {
+  if (value === null || value === undefined || value === '') {
+    return fallback
+  }
+
+  const parsedValue = Number(value)
+
+  if (!Number.isInteger(parsedValue)) {
+    return fallback
+  }
+
+  return Math.min(Math.max(parsedValue, minimum), maximum)
+}
+
+function getRequestClientId(request) {
+  const forwardedFor = request.headers['x-forwarded-for']
+  const firstForwardedAddress = Array.isArray(forwardedFor)
+    ? forwardedFor[0]
+    : forwardedFor?.split(',')[0]
+
+  return (
+    firstForwardedAddress?.trim() ||
+    request.socket?.remoteAddress ||
+    'unknown-client'
+  )
+}
+
+function enforceSteamRouteRateLimit(request, response, pathname) {
+  const limit = STEAM_ROUTE_RATE_LIMITS.get(pathname)
+
+  if (!limit) {
+    return true
+  }
+
+  const now = Date.now()
+  const bucketKey = `${getRequestClientId(request)}:${pathname}`
+  const currentBucket = rateLimitBuckets.get(bucketKey)
+  const bucket =
+    !currentBucket || currentBucket.resetAt <= now
+      ? { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
+      : currentBucket
+
+  bucket.count += 1
+  rateLimitBuckets.set(bucketKey, bucket)
+
+  if (rateLimitBuckets.size > 1_000) {
+    for (const [key, storedBucket] of rateLimitBuckets) {
+      if (storedBucket.resetAt <= now) {
+        rateLimitBuckets.delete(key)
+      }
+    }
+  }
+
+  if (bucket.count <= limit) {
+    return true
+  }
+
+  sendJsonWithHeaders(
+    response,
+    429,
+    { message: 'Too many Steam requests. Please try again shortly.' },
+    {
+      'Retry-After': String(
+        Math.max(1, Math.ceil((bucket.resetAt - now) / 1_000)),
+      ),
+    },
+  )
+
+  return false
 }
 
 function getFreshCacheValue(cache, key) {
@@ -236,9 +322,7 @@ function createSteamGame(app, storeDetails) {
       `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
     storeUrl: `https://store.steampowered.com/app/${appid}`,
     achievementCount,
-    averageRate: 0,
     hasAchievements: achievementCount > 0,
-    isPopular: false,
   }
 }
 
@@ -368,8 +452,18 @@ async function enrichSteamStoreGames(apps, tagNameById) {
 
 async function handleSteamStoreGames(requestUrl, response) {
   const query = requestUrl.searchParams.get('query') ?? ''
-  const start = Math.max(Number(requestUrl.searchParams.get('start') ?? 0), 0)
-  const count = Math.min(Number(requestUrl.searchParams.get('count') ?? 20), 50)
+  const start = getBoundedInteger(
+    requestUrl.searchParams.get('start'),
+    0,
+    0,
+    100_000,
+  )
+  const count = getBoundedInteger(
+    requestUrl.searchParams.get('count'),
+    20,
+    1,
+    50,
+  )
   const filter = requestUrl.searchParams.get('filter') ?? 'globaltopsellers'
   const selectedTagName = requestUrl.searchParams.get('tag')?.trim() ?? ''
 
@@ -412,7 +506,12 @@ async function handleSteamStoreGames(requestUrl, response) {
 
 async function handleSteamApps(requestUrl, response) {
   const query = requestUrl.searchParams.get('query') ?? ''
-  const limit = Math.min(Number(requestUrl.searchParams.get('limit') ?? 30), 30)
+  const limit = getBoundedInteger(
+    requestUrl.searchParams.get('limit'),
+    30,
+    1,
+    30,
+  )
 
   if (query.trim().length < 2) {
     sendJson(response, 200, { apps: [] })
@@ -545,6 +644,7 @@ async function verifySteamOpenId(requestUrl) {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: params,
+    signal: AbortSignal.timeout(STEAM_FETCH_TIMEOUT_MS),
   })
   const text = await response.text()
 
@@ -797,7 +897,9 @@ async function fetchPlayerAchievementProgress(key, steamid, appid) {
   achievementsUrl.searchParams.set('format', 'json')
 
   try {
-    const steamResponse = await fetch(achievementsUrl)
+    const steamResponse = await fetch(achievementsUrl, {
+      signal: AbortSignal.timeout(STEAM_FETCH_TIMEOUT_MS),
+    })
 
     if (!steamResponse.ok) {
       return setCacheValue(
@@ -953,9 +1055,12 @@ async function handleAchievementOverview(request, requestUrl, response) {
     return
   }
 
-  const requestedStart = Number(requestUrl.searchParams.get('start') ?? 0)
-  const start =
-    Number.isInteger(requestedStart) && requestedStart >= 0 ? requestedStart : 0
+  const start = getBoundedInteger(
+    requestUrl.searchParams.get('start'),
+    0,
+    0,
+    100_000,
+  )
 
   try {
     const library = await fetchSteamLibraryData(
@@ -1014,6 +1119,13 @@ export async function handleSteamProxyRequest(request, response) {
       'Access-Control-Allow-Credentials': 'true',
     })
     response.end()
+    return
+  }
+
+  if (
+    request.method === 'GET' &&
+    !enforceSteamRouteRateLimit(request, response, requestUrl.pathname)
+  ) {
     return
   }
 

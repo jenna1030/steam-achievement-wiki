@@ -9,7 +9,6 @@ export interface AchievementGuide {
   id: number
   achievementId: AchievementId
   ownerSteamId: string | null
-  source?: 'local' | 'user'
   title: string
   author: string
   hint: string
@@ -27,7 +26,6 @@ export interface AchievementGuide {
   requiresSecondRun: boolean
   difficulty: '쉬움' | '보통' | '어려움' | '매우 어려움'
   estimatedMinutes: number
-  helpfulCount: number
   createdAt: string
   updatedAt: string
 }

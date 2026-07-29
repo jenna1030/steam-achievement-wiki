@@ -10,7 +10,5 @@ export interface Game {
   image: string
   storeUrl: string
   achievementCount: number
-  averageRate: number
   hasAchievements: boolean
-  isPopular: boolean
 }

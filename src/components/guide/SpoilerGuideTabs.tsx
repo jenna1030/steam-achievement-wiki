@@ -81,7 +81,7 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
           ))}
         </div>
       )}
-      {guide.source === 'user' && (
+      {onDelete && (
         <div className="guide-actions">
           <Link className="text-link" to={`/guides/new?guideId=${guide.id}`}>
             수정

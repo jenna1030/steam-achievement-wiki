@@ -76,7 +76,6 @@ function createGuideFromValues(
     id: guideId,
     achievementId: normalizeAchievementId(values.achievementId),
     ownerSteamId,
-    source: 'user',
     title: values.title,
     author: '나',
     hint: values.hint,
@@ -94,7 +93,6 @@ function createGuideFromValues(
     requiresSecondRun: values.requiresSecondRun,
     difficulty: values.difficulty,
     estimatedMinutes: Number(values.estimatedMinutes),
-    helpfulCount: 0,
     createdAt: now,
     updatedAt: now,
   }
