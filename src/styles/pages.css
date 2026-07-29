@@ -382,6 +382,13 @@
   margin: 7px 0 0;
 }
 
+.profile-completion-action {
+  margin-top: 10px;
+  border-color: rgba(255, 255, 255, 0.72);
+  background: var(--color-paper);
+  color: var(--color-navy);
+}
+
 .profile-completion-track {
   height: 7px;
   margin-top: 9px;

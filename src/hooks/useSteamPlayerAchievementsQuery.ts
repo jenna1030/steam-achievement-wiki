@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   fetchSteamAchievementOverview,
@@ -20,7 +19,7 @@ export function useSteamPlayerAchievementsQuery(
 export function useSteamAchievementOverviewQuery(
   steamId: string | undefined,
 ) {
-  const query = useInfiniteQuery({
+  return useInfiniteQuery({
     queryKey: ['steam', 'achievement-overview', steamId],
     queryFn: ({ pageParam }) => fetchSteamAchievementOverview(pageParam),
     initialPageParam: 0,
@@ -28,23 +27,4 @@ export function useSteamAchievementOverviewQuery(
     enabled: Boolean(steamId),
     staleTime: 1000 * 60 * 15,
   })
-  const {
-    fetchNextPage,
-    hasNextPage,
-    isError,
-    isFetchingNextPage,
-  } = query
-
-  useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage && !isError) {
-      void fetchNextPage()
-    }
-  }, [
-    fetchNextPage,
-    hasNextPage,
-    isError,
-    isFetchingNextPage,
-  ])
-
-  return query
 }

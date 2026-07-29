@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { CompletionBadge } from '../components/common/CompletionBadge'
-import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useSteamAchievementOverviewQuery } from '../hooks/useSteamPlayerAchievementsQuery'
 import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
 import { useSteamProfileQuery } from '../hooks/useSteamProfileQuery'
@@ -61,9 +60,12 @@ function LibraryGameCard({
   game: SteamOwnedGame
   progress?: SteamPlayerAchievementProgress
 }) {
-  const { data: gameDetail } = useGameDetailQuery(game.appid)
   const [failedImageUrl, setFailedImageUrl] = useState('')
-  const imageUrl = gameDetail?.image || getSteamIconUrl(game)
+  const headerImageUrl =
+    `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`
+  const iconImageUrl = getSteamIconUrl(game)
+  const imageUrl =
+    failedImageUrl === headerImageUrl ? iconImageUrl : headerImageUrl
   const canShowImage = imageUrl && failedImageUrl !== imageUrl
 
   return (
@@ -136,6 +138,7 @@ export function MyPage() {
       ).length,
   )
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [isFullOverviewRequested, setIsFullOverviewRequested] = useState(false)
   const [sortOption, setSortOption] =
     useState<LibrarySortOption>('playtime-desc')
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
@@ -147,6 +150,7 @@ export function MyPage() {
   const { data: profile } = useSteamProfileQuery(user?.steamId)
   const {
     data: achievementOverview,
+    fetchNextPage: fetchNextAchievementPage,
     hasNextPage: hasMoreAchievementPages,
     isError: isAchievementOverviewError,
     isFetchingNextPage: isAchievementOverviewFetching,
@@ -198,6 +202,29 @@ export function MyPage() {
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
   }, [sortOption, user?.steamId])
+
+  useEffect(() => {
+    setIsFullOverviewRequested(false)
+  }, [user?.steamId])
+
+  useEffect(() => {
+    if (
+      !isFullOverviewRequested ||
+      !hasMoreAchievementPages ||
+      isAchievementOverviewFetching ||
+      isAchievementOverviewError
+    ) {
+      return
+    }
+
+    void fetchNextAchievementPage()
+  }, [
+    fetchNextAchievementPage,
+    hasMoreAchievementPages,
+    isAchievementOverviewError,
+    isAchievementOverviewFetching,
+    isFullOverviewRequested,
+  ])
 
   useEffect(() => {
     if (!hasMoreGames) {
@@ -295,7 +322,11 @@ export function MyPage() {
                   ? '확인 불가'
                   : `${achievementCompletionRate}%`}
               </strong>
-              <span>전체 도전과제 달성률</span>
+              <span>
+                {isAchievementOverviewComplete
+                  ? '전체 도전과제 달성률'
+                  : '현재 집계된 도전과제 달성률'}
+              </span>
             </div>
             <div
               aria-label={`전체 도전과제 달성률 ${achievementCompletionRate}%`}
@@ -312,8 +343,17 @@ export function MyPage() {
               {totalAchievementCount.toLocaleString()}개 달성
               {!isAchievementOverviewComplete &&
                 !isAchievementOverviewError &&
-                ' · 집계 중'}
+                (isFullOverviewRequested ? ' · 집계 중' : ' · 일부 집계')}
             </p>
+            {hasMoreAchievementPages && !isFullOverviewRequested && (
+              <button
+                className="profile-completion-action"
+                type="button"
+                onClick={() => setIsFullOverviewRequested(true)}
+              >
+                전체 기록 집계
+              </button>
+            )}
           </div>
         </section>
         <button
@@ -363,7 +403,7 @@ export function MyPage() {
                 달성 도전과제
                 {!isAchievementOverviewComplete &&
                   !isAchievementOverviewError &&
-                  ' (집계 중)'}
+                  (isFullOverviewRequested ? ' (집계 중)' : ' (일부 집계)')}
               </span>
             </article>
             <article className="completion-summary-card">
@@ -433,7 +473,7 @@ export function MyPage() {
                   />
                 ))}
               </section>
-              {isAchievementOverviewFetching && (
+              {isAchievementOverviewFetching && isFullOverviewRequested && (
                 <p className="library-achievement-status" role="status">
                   Steam 도전과제 달성 현황을 순차적으로 집계하고 있습니다.
                 </p>

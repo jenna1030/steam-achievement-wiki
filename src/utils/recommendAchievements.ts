@@ -8,6 +8,17 @@ export interface RecommendedAchievementView {
   reason: string
 }
 
+export function selectHomeGameIds(
+  favoriteGameIds: number[],
+  fallbackGameIds: number[],
+  limit = 3,
+) {
+  return Array.from(new Set([...favoriteGameIds, ...fallbackGameIds])).slice(
+    0,
+    limit,
+  )
+}
+
 export function recommendEasyAchievements(
   achievements: Achievement[],
   games: Game[],
@@ -25,7 +36,6 @@ export function recommendEasyAchievements(
     )
     .map((achievement): RecommendedAchievementView => {
       const shortTimeBonus = achievement.estimatedMinutes > 0 && achievement.estimatedMinutes <= 30 ? 18 : 0
-      const difficultyBonus = achievement.difficulty === 'easy' ? 20 : achievement.difficulty === 'normal' ? 10 : 0
       const favoriteGameBonus = favoriteGameIdSet.has(achievement.gameId)
         ? 12
         : 0
@@ -33,7 +43,6 @@ export function recommendEasyAchievements(
       const score =
         achievement.globalRate +
         shortTimeBonus +
-        difficultyBonus +
         favoriteGameBonus +
         missablePenalty
       const reason =
@@ -42,7 +51,7 @@ export function recommendEasyAchievements(
           : achievement.estimatedMinutes > 0 &&
               achievement.estimatedMinutes <= 30
           ? '30분 안에 도전하기 좋은 항목'
-          : '달성률과 난이도 기준 추천'
+          : '전체 달성률 기준 추천'
 
       return {
         achievement,

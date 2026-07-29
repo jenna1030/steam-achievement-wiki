@@ -1,31 +1,34 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AchievementRateChart } from '../components/chart/AchievementRateChart'
+import { LazyAchievementRateChart } from '../components/chart/LazyAchievementRateChart'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { EasyAchievementList } from '../components/recommendation/EasyAchievementList'
-import { useAchievementsQuery } from '../hooks/useAchievementsQuery'
-import { useFeaturedGamesQuery } from '../hooks/useGamesQuery'
+import { useAchievementsQueries } from '../hooks/useAchievementsQuery'
+import {
+  DEFAULT_FEATURED_STEAM_APP_IDS,
+  useFeaturedGamesQuery,
+} from '../hooks/useGamesQuery'
 import { useLibraryStore } from '../stores/libraryStore'
-import { recommendEasyAchievements } from '../utils/recommendAchievements'
+import {
+  recommendEasyAchievements,
+  selectHomeGameIds,
+} from '../utils/recommendAchievements'
 
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
+  const favoriteGameIds = useLibraryStore((state) => state.favoriteGameIds)
+  const homeGameIds = selectHomeGameIds(
+    favoriteGameIds,
+    DEFAULT_FEATURED_STEAM_APP_IDS,
+  )
   const {
     data: featuredGames = [],
     isError: isFeaturedGamesError,
     isLoading: isFeaturedGamesLoading,
-  } = useFeaturedGamesQuery()
-  const favoriteGameIds = useLibraryStore((state) => state.favoriteGameIds)
-  const firstGameAchievementsQuery = useAchievementsQuery(1145350)
-  const secondGameAchievementsQuery = useAchievementsQuery(413150)
-  const thirdGameAchievementsQuery = useAchievementsQuery(367520)
-  const featuredAchievementQueries = [
-    firstGameAchievementsQuery,
-    secondGameAchievementsQuery,
-    thirdGameAchievementsQuery,
-  ]
+  } = useFeaturedGamesQuery(homeGameIds)
+  const featuredAchievementQueries = useAchievementsQueries(homeGameIds)
   const allAchievements = featuredAchievementQueries.flatMap(
     (query) => query.data ?? [],
   )
@@ -95,7 +98,11 @@ export function HomePage() {
       <section className="section" id="games">
         <div className="section-heading">
           <p className="eyebrow">Featured Games</p>
-          <h2>도전과제를 확인할 게임</h2>
+          <h2>
+            {favoriteGameIds.length > 0
+              ? '관심 게임에서 이어보기'
+              : '도전과제를 확인할 게임'}
+          </h2>
         </div>
         {isFeaturedGamesLoading && (
           <LoadingState message="Steam 게임 정보를 불러오는 중입니다." />
@@ -156,8 +163,8 @@ export function HomePage() {
           <p className="eyebrow">Easy Picks</p>
           <h2>가볍게 시작할 도전과제</h2>
           <p className="muted">
-            Steam 전체 달성률과 체감 난이도를 기준으로 시작하기 쉬운 항목을
-            추천합니다.
+            관심 게임을 우선으로 Steam 전체 달성률과 예상 시간을 계산해
+            시작하기 쉬운 항목을 추천합니다.
           </p>
         </div>
         {isAchievementsLoading ? (
@@ -168,7 +175,7 @@ export function HomePage() {
       </section>
 
       <section className="section">
-        <AchievementRateChart
+        <LazyAchievementRateChart
           achievements={allAchievements}
           games={featuredGames}
         />

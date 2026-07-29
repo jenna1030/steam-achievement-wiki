@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { fetchSteamAchievements } from '../apis/steamApi'
 import type { AchievementId } from '../types/achievement'
 import {
@@ -7,16 +7,28 @@ import {
 } from '../utils/achievementIdentity'
 import { mapSteamAchievements } from '../utils/steamAchievements'
 
-export function useAchievementsQuery(gameId: number) {
-  return useQuery({
-    queryKey: ['steam', 'achievements', gameId],
-    queryFn: async () => {
-      const steamAchievements = await fetchSteamAchievements(gameId)
+async function fetchMappedAchievements(gameId: number) {
+  const steamAchievements = await fetchSteamAchievements(gameId)
 
-      return mapSteamAchievements(steamAchievements, gameId)
-    },
+  return mapSteamAchievements(steamAchievements, gameId)
+}
+
+function getAchievementsQueryOptions(gameId: number) {
+  return {
+    queryKey: ['steam', 'achievements', gameId],
+    queryFn: () => fetchMappedAchievements(gameId),
     enabled: Number.isFinite(gameId) && gameId > 0,
     staleTime: 1000 * 60 * 30,
+  }
+}
+
+export function useAchievementsQuery(gameId: number) {
+  return useQuery(getAchievementsQueryOptions(gameId))
+}
+
+export function useAchievementsQueries(gameIds: number[]) {
+  return useQueries({
+    queries: gameIds.map(getAchievementsQueryOptions),
   })
 }
 
@@ -26,11 +38,7 @@ export function useAchievementDetailQuery(achievementId: AchievementId) {
   return useQuery({
     queryKey: ['steam', 'achievement', achievementId],
     queryFn: async () => {
-      const steamAchievements = await fetchSteamAchievements(gameId as number)
-      const achievements = mapSteamAchievements(
-        steamAchievements,
-        gameId as number,
-      )
+      const achievements = await fetchMappedAchievements(gameId as number)
 
       return achievements.find((achievement) =>
         matchesAchievementId(achievement, achievementId),

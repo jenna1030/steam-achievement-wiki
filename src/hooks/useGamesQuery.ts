@@ -2,23 +2,20 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchSteamGame } from '../apis/steamApi'
 import type { Game } from '../types/game'
 
-const FEATURED_STEAM_APP_IDS = [1145350, 413150, 367520]
+export const DEFAULT_FEATURED_STEAM_APP_IDS = [1145350, 413150, 367520]
 
-async function fetchFeaturedSteamGames() {
+async function fetchFeaturedSteamGames(steamAppIds: number[]) {
   const games = await Promise.all(
-    FEATURED_STEAM_APP_IDS.map((steamAppId) => fetchSteamGame(steamAppId)),
+    steamAppIds.map((steamAppId) => fetchSteamGame(steamAppId)),
   )
 
   return games.filter((game): game is Game => Boolean(game))
 }
 
-export function useGamesQuery() {
+export function useFeaturedGamesQuery(steamAppIds: number[]) {
   return useQuery({
-    queryKey: ['steam', 'games', 'featured'],
-    queryFn: fetchFeaturedSteamGames,
+    queryKey: ['steam', 'games', 'featured', steamAppIds],
+    queryFn: () => fetchFeaturedSteamGames(steamAppIds),
+    enabled: steamAppIds.length > 0,
   })
-}
-
-export function useFeaturedGamesQuery() {
-  return useGamesQuery()
 }
