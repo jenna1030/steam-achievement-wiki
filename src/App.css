@@ -378,12 +378,60 @@ dd {
 }
 
 .search-toolbar label,
+.genre-combobox,
 .achievement-toolbar label {
   display: grid;
   gap: 8px;
   color: #343941;
   font-size: 13px;
   font-weight: 900;
+}
+
+.genre-combobox {
+  position: relative;
+}
+
+.genre-combobox label {
+  font: inherit;
+}
+
+.genre-combobox-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: grid;
+  max-height: 240px;
+  padding: 6px;
+  overflow-y: auto;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
+}
+
+.genre-combobox-option {
+  min-height: 38px;
+  padding: 8px 10px;
+  color: var(--color-ink);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+
+.genre-combobox-option:hover,
+.genre-combobox-option[aria-selected='true'] {
+  color: var(--color-panel);
+  background: var(--color-blue);
+}
+
+.genre-combobox-empty {
+  margin: 0;
+  padding: 10px;
+  color: var(--color-muted);
+  font-size: 12px;
 }
 
 .result-count {
