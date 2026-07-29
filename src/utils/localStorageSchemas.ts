@@ -133,13 +133,15 @@ function parseGuide(value: unknown): AchievementGuide | null {
   return {
     id,
     achievementId,
+    source: value.source === 'example' ? 'example' : 'user',
     ownerSteamId:
       typeof value.ownerSteamId === 'string' ? value.ownerSteamId : null,
     title,
     author: asString(value.author, '나'),
     hint: asString(value.hint),
     detail: asString(value.detail),
-    hasSpoiler: value.hasSpoiler === true,
+    hasSpoiler:
+      value.hasSpoiler === true && asString(value.spoiler).trim().length > 0,
     spoiler: asString(value.spoiler),
     conditions: asStringArray(value.conditions),
     supplies: asStringArray(value.supplies),
@@ -154,6 +156,8 @@ function parseGuide(value: unknown): AchievementGuide | null {
     requiresSecondRun: value.requiresSecondRun === true,
     difficulty: asDifficulty(value.difficulty),
     estimatedMinutes: asNonNegativeInteger(value.estimatedMinutes),
+    likeCount: asNonNegativeInteger(value.likeCount),
+    dislikeCount: asNonNegativeInteger(value.dislikeCount),
     createdAt: asString(value.createdAt),
     updatedAt: asString(value.updatedAt),
   }

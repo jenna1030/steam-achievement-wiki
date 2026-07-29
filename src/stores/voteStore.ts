@@ -17,7 +17,6 @@ interface VoteState {
   votes: DifficultyVote[]
   userVotes: Record<AchievementId, VoteOption>
   vote: (achievementId: AchievementId, option: VoteOption) => void
-  removeVote: (achievementId: AchievementId) => void
   migrateAchievementId: (
     legacyId: AchievementId,
     achievementId: AchievementId,
@@ -98,26 +97,6 @@ export const useVoteStore = create<VoteState>((set) => {
             ]
         const userVotes = { ...state.userVotes, [achievementId]: option }
 
-        persistState(votes, userVotes)
-
-        return { votes, userVotes }
-      }),
-    removeVote: (achievementId) =>
-      set((state) => {
-        const previousVote = state.userVotes[achievementId]
-
-        if (!previousVote) {
-          return state
-        }
-
-        const votes = state.votes.map((voteItem) =>
-          voteItem.achievementId === achievementId
-            ? changeVoteCount(voteItem, previousVote, -1)
-            : voteItem,
-        )
-        const userVotes = { ...state.userVotes }
-
-        delete userVotes[achievementId]
         persistState(votes, userVotes)
 
         return { votes, userVotes }

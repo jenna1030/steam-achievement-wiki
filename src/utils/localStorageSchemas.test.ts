@@ -26,6 +26,8 @@ describe('localStorage schemas', () => {
         achievementId: 36752000001,
         title: '기존 공략',
         tags: ['본편'],
+        hasSpoiler: true,
+        spoiler: '',
       },
       { id: 2, title: '식별자 없음' },
     ])
@@ -34,11 +36,15 @@ describe('localStorage schemas', () => {
     expect(guides?.[0]).toMatchObject({
       id: 1,
       achievementId: '36752000001',
+      source: 'user',
       ownerSteamId: null,
       title: '기존 공략',
+      hasSpoiler: false,
       difficulty: '보통',
       dlcRequirement: 'unknown',
       tags: ['본편'],
+      likeCount: 0,
+      dislikeCount: 0,
     })
   })
 

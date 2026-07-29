@@ -146,25 +146,113 @@
   align-items: start;
 }
 
-.guide-actions {
+.guide-author-row {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
+  margin-bottom: 8px;
 }
 
-.guide-actions .text-link {
-  margin-top: 0;
+.guide-author-row p {
+  margin: 0;
 }
 
+.guide-source-badge {
+  padding: 4px 8px;
+  color: var(--color-panel);
+  background: var(--color-blue);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.guide-labels {
+  display: grid;
+  gap: 10px;
+}
 .guide-header p {
   margin-bottom: 8px;
   color: #69707a;
   font-weight: 800;
 }
 
+.guide-toolbar,
+.guide-feedback-actions,
+.guide-management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.guide-toolbar {
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line);
+}
+
+.guide-feedback-actions button,
+.guide-toggle-button {
+  min-height: 38px;
+  padding: 8px 12px;
+  color: var(--color-navy);
+  background: #eef2fa;
+  border-color: #c5cee1;
+}
+
+.guide-feedback-actions button:hover:not(:disabled),
+.guide-feedback-actions button.is-selected,
+.guide-toggle-button:hover {
+  color: var(--color-panel);
+  background: var(--color-blue);
+  border-color: var(--color-blue);
+}
+
+.guide-feedback-actions button:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  background: #ece8df;
+  border-color: var(--color-line);
+}
+
+.guide-feedback-actions .guide-report-button {
+  color: var(--color-red);
+  background: #fff1ec;
+  border-color: #e9b8aa;
+}
+
+.guide-feedback-actions .guide-report-button:hover:not(:disabled) {
+  color: var(--color-panel);
+  background: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.guide-management-actions .text-link {
+  margin: 0 4px;
+}
+
+.guide-toggle-button {
+  min-width: 132px;
+}
+
+.guide-expanded-content {
+  display: grid;
+  gap: 18px;
+  padding-top: 2px;
+}
+
+.guide-content-empty {
+  padding: 18px;
+  color: var(--color-muted);
+  background: rgba(255, 250, 242, 0.74);
+  border: 1px dashed var(--color-line);
+  border-radius: 8px;
+  font-weight: 800;
+}
 .spoiler-tab-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
 }
 
@@ -494,19 +582,6 @@
 .vote-button strong,
 .vote-button small {
   font-weight: 900;
-}
-
-.vote-change-actions {
-  display: grid;
-  gap: 8px;
-  justify-items: end;
-  max-width: 260px;
-}
-
-.vote-change-actions p {
-  margin: 0;
-  font-size: 12px;
-  text-align: right;
 }
 
 .checklist-card {

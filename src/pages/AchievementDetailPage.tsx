@@ -7,6 +7,7 @@ import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { SpoilerGuideTabs } from '../components/guide/SpoilerGuideTabs'
 import { DifficultyVote } from '../components/vote/DifficultyVote'
+import { getExampleGuidesForAchievement } from '../data/exampleGuides'
 import { useAchievementDetailQuery } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useAuthStore } from '../stores/authStore'
@@ -81,12 +82,26 @@ export function AchievementDetailPage() {
         : [],
     [legacyAchievementId, rawAchievement, user?.steamId, userGuides],
   )
+  const exampleGuides = useMemo(
+    () =>
+      rawAchievement
+        ? getExampleGuidesForAchievement(
+            rawAchievement.id,
+            legacyAchievementId,
+          )
+        : [],
+    [legacyAchievementId, rawAchievement],
+  )
+  const displayGuides = useMemo(
+    () => [...localGuides, ...exampleGuides],
+    [exampleGuides, localGuides],
+  )
   const achievement = useMemo(
     () =>
       rawAchievement
-        ? applyGuideMetadata(rawAchievement, localGuides[0])
+        ? applyGuideMetadata(rawAchievement, displayGuides[0])
         : undefined,
-    [localGuides, rawAchievement],
+    [displayGuides, rawAchievement],
   )
   const displayTags = achievement ? getAchievementTags(achievement) : []
   const noticeLabels = achievement ? getAchievementNotices(achievement) : []
@@ -220,14 +235,19 @@ export function AchievementDetailPage() {
             나누어 보여줍니다.
           </p>
         </div>
-        {localGuides.map((guide) => (
+        {displayGuides.map((guide) => (
           <SpoilerGuideTabs
+            collapsible={displayGuides.length > 1}
             guide={guide}
             key={guide.id}
-            onDelete={() => deleteGuide(guide.id, ownerSteamId)}
+            onDelete={
+              guide.source === 'user'
+                ? () => deleteGuide(guide.id, ownerSteamId)
+                : undefined
+            }
           />
         ))}
-        {localGuides.length === 0 && (
+        {displayGuides.length === 0 && (
           <div className="empty-state">
             <h3>등록된 공략이 없습니다.</h3>
             <p className="muted">

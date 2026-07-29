@@ -1,6 +1,12 @@
 import { useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuthStore } from '../../stores/authStore'
+import {
+  useGuideFeedbackStore,
+  type GuideReaction,
+} from '../../stores/guideFeedbackStore'
 import type { AchievementGuide, SpoilerLevel } from '../../types/guide'
+import { getGuideFeedbackKey } from '../../utils/guideFeedback'
 
 const spoilerOptions: Array<{
   level: SpoilerLevel
@@ -26,16 +32,38 @@ const spoilerOptions: Array<{
 
 interface SpoilerGuideTabsProps {
   guide: AchievementGuide
+  collapsible?: boolean
   onDelete?: () => void
 }
 
-export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
-  const [selectedLevel, setSelectedLevel] = useState<SpoilerLevel>('hint')
-  const visibleSpoilerOptions = guide.hasSpoiler
-    ? spoilerOptions
-    : spoilerOptions.filter((option) => option.level !== 'spoiler')
-  const selectedOption = spoilerOptions.find(
+export function SpoilerGuideTabs({
+  guide,
+  collapsible = false,
+  onDelete,
+}: SpoilerGuideTabsProps) {
+  const actorSteamId = useAuthStore((state) => state.user?.steamId ?? null)
+  const reactions = useGuideFeedbackStore((state) => state.reactions)
+  const reports = useGuideFeedbackStore((state) => state.reports)
+  const toggleReaction = useGuideFeedbackStore(
+    (state) => state.toggleReaction,
+  )
+  const reportGuide = useGuideFeedbackStore((state) => state.reportGuide)
+  const visibleSpoilerOptions = spoilerOptions.filter(
+    (option) =>
+      guide[option.level].trim().length > 0 &&
+      (option.level !== 'spoiler' || guide.hasSpoiler),
+  )
+  const initialLevel = visibleSpoilerOptions[0]?.level ?? 'hint'
+  const [selectedLevel, setSelectedLevel] =
+    useState<SpoilerLevel>(initialLevel)
+  const [isExpanded, setIsExpanded] = useState(!collapsible)
+  const activeLevel = visibleSpoilerOptions.some(
     (option) => option.level === selectedLevel,
+  )
+    ? selectedLevel
+    : initialLevel
+  const selectedOption = visibleSpoilerOptions.find(
+    (option) => option.level === activeLevel,
   )
   const guideTags = guide.tags.length > 0 ? guide.tags : ['태그 없음']
   const guideNotices = [
@@ -50,8 +78,17 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
     guide.isMissable ? '놓치기 쉬움' : null,
     guide.requiresSecondRun ? '2회차 필요' : null,
   ].filter((notice): notice is string => Boolean(notice))
+  const feedbackKey = getGuideFeedbackKey(guide.id, actorSteamId)
+  const selectedReaction = reactions[feedbackKey]
+  const isReported = reports.includes(feedbackKey)
+  const isOwnGuide =
+    guide.source !== 'example' && guide.ownerSteamId === actorSteamId
+  const likeCount = guide.likeCount + (selectedReaction === 'like' ? 1 : 0)
+  const dislikeCount =
+    guide.dislikeCount + (selectedReaction === 'dislike' ? 1 : 0)
   const panelId = `guide-${guide.id}-panel`
-  const selectedTabId = `guide-${guide.id}-${selectedLevel}-tab`
+  const contentId = `guide-${guide.id}-content`
+  const selectedTabId = `guide-${guide.id}-${activeLevel}-tab`
 
   const handleTabKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>,
@@ -83,11 +120,22 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
       ?.focus()
   }
 
+  const handleReaction = (reaction: GuideReaction) => {
+    if (!isOwnGuide) {
+      toggleReaction(guide.id, actorSteamId, reaction)
+    }
+  }
+
   return (
-    <article className="guide-card">
+    <article className={`guide-card${isExpanded ? ' is-expanded' : ''}`}>
       <div className="guide-header">
         <div>
-          <p>{guide.author}</p>
+          <div className="guide-author-row">
+            <p>{guide.author}</p>
+            {guide.source === 'example' && (
+              <span className="guide-source-badge">예시 공략</span>
+            )}
+          </div>
           <h3>{guide.title}</h3>
         </div>
         <dl>
@@ -101,98 +149,169 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
           </div>
         </dl>
       </div>
-      <div className="tag-row">
-        {guideTags.map((tag) => (
-          <span key={tag}>{tag}</span>
-        ))}
-      </div>
-      {guideNotices.length > 0 && (
-        <div className="notice-row">
-          {guideNotices.map((notice) => (
-            <span key={notice}>{notice}</span>
+
+      <div className="guide-labels">
+        <div className="tag-row">
+          {guideTags.map((tag) => (
+            <span key={tag}>{tag}</span>
           ))}
         </div>
-      )}
-      {onDelete && (
-        <div className="guide-actions">
-          <Link className="text-link" to={`/guides/new?guideId=${guide.id}`}>
-            수정
-          </Link>
-          <button className="secondary-button" type="button" onClick={onDelete}>
-            삭제
-          </button>
-        </div>
-      )}
-
-      <div className="spoiler-tab-list" role="tablist" aria-label="공략 공개 단계">
-        {visibleSpoilerOptions.map((option, index) => (
-          <button
-            className={
-              option.level === selectedLevel
-                ? 'spoiler-tab is-active'
-                : 'spoiler-tab'
-            }
-            key={option.level}
-            id={`guide-${guide.id}-${option.level}-tab`}
-            type="button"
-            role="tab"
-            aria-controls={panelId}
-            aria-selected={option.level === selectedLevel}
-            tabIndex={option.level === selectedLevel ? 0 : -1}
-            onClick={() => setSelectedLevel(option.level)}
-            onKeyDown={(event) => handleTabKeyDown(event, index)}
-          >
-            {option.label}
-          </button>
-        ))}
+        {guideNotices.length > 0 && (
+          <div className="notice-row">
+            {guideNotices.map((notice) => (
+              <span key={notice}>{notice}</span>
+            ))}
+          </div>
+        )}
       </div>
 
-      <section
-        aria-labelledby={selectedTabId}
-        className="spoiler-panel"
-        id={panelId}
-        role="tabpanel"
-        tabIndex={0}
-      >
-        <p className="eyebrow">{selectedOption?.label}</p>
-        <p className="muted">{selectedOption?.helper}</p>
-        <strong>{guide[selectedLevel]}</strong>
-      </section>
+      <div className="guide-toolbar">
+        <div className="guide-feedback-actions" aria-label="공략 평가">
+          <button
+            aria-pressed={selectedReaction === 'like'}
+            className={selectedReaction === 'like' ? 'is-selected' : ''}
+            disabled={isOwnGuide}
+            title={isOwnGuide ? '내 공략은 평가할 수 없습니다.' : undefined}
+            type="button"
+            onClick={() => handleReaction('like')}
+          >
+            좋아요 {likeCount}
+          </button>
+          <button
+            aria-pressed={selectedReaction === 'dislike'}
+            className={selectedReaction === 'dislike' ? 'is-selected' : ''}
+            disabled={isOwnGuide}
+            title={isOwnGuide ? '내 공략은 평가할 수 없습니다.' : undefined}
+            type="button"
+            onClick={() => handleReaction('dislike')}
+          >
+            싫어요 {dislikeCount}
+          </button>
+          <button
+            className="guide-report-button"
+            disabled={isOwnGuide || isReported}
+            type="button"
+            onClick={() => reportGuide(guide.id, actorSteamId)}
+          >
+            {isReported ? '신고됨' : '신고'}
+          </button>
+        </div>
 
-      <section className="guide-detail-grid" aria-label="공략 부가 정보">
-        <div>
-          <h4>달성 조건</h4>
-          <ul>
-            {guide.conditions.map((condition) => (
-              <li key={condition}>{condition}</li>
-            ))}
-          </ul>
+        <div className="guide-management-actions">
+          {onDelete && (
+            <>
+              <Link
+                className="text-link"
+                to={`/guides/new?guideId=${guide.id}`}
+              >
+                수정
+              </Link>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={onDelete}
+              >
+                삭제
+              </button>
+            </>
+          )}
+          {collapsible && (
+            <button
+              aria-controls={contentId}
+              aria-expanded={isExpanded}
+              className="guide-toggle-button"
+              type="button"
+              onClick={() => setIsExpanded((expanded) => !expanded)}
+            >
+              {isExpanded ? '공략 접기' : '공략 펼쳐보기'}
+            </button>
+          )}
         </div>
-        <div>
-          <h4>준비물</h4>
-          <ul>
-            {guide.supplies.map((supply) => (
-              <li key={supply}>{supply}</li>
-            ))}
-          </ul>
+      </div>
+
+      {isExpanded && (
+        <div className="guide-expanded-content" id={contentId}>
+          {visibleSpoilerOptions.length > 0 ? (
+            <>
+              <div
+                className="spoiler-tab-list"
+                role="tablist"
+                aria-label="공략 공개 단계"
+              >
+                {visibleSpoilerOptions.map((option, index) => (
+                  <button
+                    className={
+                      option.level === activeLevel
+                        ? 'spoiler-tab is-active'
+                        : 'spoiler-tab'
+                    }
+                    key={option.level}
+                    id={`guide-${guide.id}-${option.level}-tab`}
+                    type="button"
+                    role="tab"
+                    aria-controls={panelId}
+                    aria-selected={option.level === activeLevel}
+                    tabIndex={option.level === activeLevel ? 0 : -1}
+                    onClick={() => setSelectedLevel(option.level)}
+                    onKeyDown={(event) => handleTabKeyDown(event, index)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <section
+                aria-labelledby={selectedTabId}
+                className="spoiler-panel"
+                id={panelId}
+                role="tabpanel"
+                tabIndex={0}
+              >
+                <p className="eyebrow">{selectedOption?.label}</p>
+                <p className="muted">{selectedOption?.helper}</p>
+                <strong>{guide[activeLevel]}</strong>
+              </section>
+            </>
+          ) : (
+            <p className="guide-content-empty">등록된 공략 내용이 없습니다.</p>
+          )}
+
+          <section className="guide-detail-grid" aria-label="공략 부가 정보">
+            <div>
+              <h4>달성 조건</h4>
+              <ul>
+                {guide.conditions.map((condition) => (
+                  <li key={condition}>{condition}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4>준비물</h4>
+              <ul>
+                {guide.supplies.map((supply) => (
+                  <li key={supply}>{supply}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4>진행 순서</h4>
+              <ol>
+                {guide.recommendedOrder.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </div>
+            <div>
+              <h4>주의사항</h4>
+              <ul>
+                {guide.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          </section>
         </div>
-        <div>
-          <h4>진행 순서</h4>
-          <ol>
-            {guide.recommendedOrder.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-        </div>
-        <div>
-          <h4>주의사항</h4>
-          <ul>
-            {guide.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      )}
     </article>
   )
 }

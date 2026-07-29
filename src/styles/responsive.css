@@ -71,6 +71,15 @@
     justify-content: flex-start;
   }
 
+  .guide-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .guide-management-actions {
+    justify-content: flex-end;
+  }
+
   .target-selection-status {
     grid-template-columns: 1fr;
   }
@@ -104,15 +113,6 @@
   .checklist-card-footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .vote-change-actions {
-    justify-items: start;
-    max-width: none;
-  }
-
-  .vote-change-actions p {
-    text-align: left;
   }
 
   .achievement-icon {

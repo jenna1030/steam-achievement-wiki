@@ -4,10 +4,12 @@ import type {
 } from './achievement'
 
 export type SpoilerLevel = 'hint' | 'detail' | 'spoiler'
+export type GuideSource = 'user' | 'example'
 
 export interface AchievementGuide {
   id: number
   achievementId: AchievementId
+  source: GuideSource
   ownerSteamId: string | null
   title: string
   author: string
@@ -26,6 +28,8 @@ export interface AchievementGuide {
   requiresSecondRun: boolean
   difficulty: '쉬움' | '보통' | '어려움' | '매우 어려움'
   estimatedMinutes: number
+  likeCount: number
+  dislikeCount: number
   createdAt: string
   updatedAt: string
 }
