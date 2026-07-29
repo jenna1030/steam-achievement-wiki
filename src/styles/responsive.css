@@ -85,12 +85,26 @@
   }
 
   .topbar {
-    align-items: flex-start;
-    flex-direction: column;
+    display: grid;
+    grid-template-areas:
+      'brand actions'
+      'nav nav';
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .brand {
+    grid-area: brand;
+  }
+
+  .nav {
+    grid-area: nav;
   }
 
   .topbar-actions {
-    flex-wrap: wrap;
+    grid-area: actions;
+    flex-wrap: nowrap;
+    justify-self: end;
   }
 
   .game-grid,
@@ -126,6 +140,14 @@
 }
 
 @media (max-width: 520px) {
+  .topbar {
+    gap: 12px;
+  }
+
+  .brand {
+    font-size: 16px;
+  }
+
   .profile-panel {
     grid-template-areas:
       'avatar'
@@ -168,5 +190,19 @@
   .steam-profile-avatar {
     width: 88px;
     height: 88px;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    grid-template-areas:
+      'brand'
+      'actions'
+      'nav';
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-actions {
+    justify-self: start;
   }
 }
