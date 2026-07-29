@@ -735,13 +735,13 @@
 }
 
 .search-guidance.is-active {
-  color: #dce6ff;
-  background: var(--color-navy);
-  border: 4px double var(--color-red);
+  color: #33415f;
+  background: #f0f2f7;
+  border: 4px double #a8b2c8;
 }
 
 .search-guidance.is-active strong {
-  color: #ffbbb5;
+  color: var(--color-red);
 }
 
 .selected-target-summary {
