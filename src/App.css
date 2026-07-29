@@ -586,6 +586,56 @@ dd {
   margin-bottom: 0;
 }
 
+.library-scroll-sentinel {
+  margin-top: 14px;
+}
+
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-image,
+.skeleton-line {
+  position: relative;
+  overflow: hidden;
+  background: #e7dfcf;
+  border-radius: 6px;
+}
+
+.skeleton-image {
+  aspect-ratio: 16 / 7;
+}
+
+.skeleton-line {
+  width: 72%;
+  height: 14px;
+}
+
+.skeleton-line-short {
+  width: 42%;
+}
+
+.skeleton-image::after,
+.skeleton-line::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 250, 242, 0.72),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .chip-button {
   min-height: 32px;
   padding: 0 10px;
