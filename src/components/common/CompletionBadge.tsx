@@ -3,7 +3,7 @@ interface CompletionBadgeProps {
 }
 
 export function CompletionBadge({
-  label = '100% 완료',
+  label = '도전과제 100% 완료',
 }: CompletionBadgeProps) {
   return (
     <strong className="perfect-game-badge">

@@ -5,6 +5,6 @@ export function useGameDetailQuery(gameId: number) {
   return useQuery({
     queryKey: ['steam', 'game', gameId],
     queryFn: () => fetchSteamGame(gameId),
-    enabled: Number.isFinite(gameId),
+    enabled: Number.isFinite(gameId) && gameId > 0,
   })
 }

@@ -340,10 +340,11 @@ export function MyPage() {
               <strong>{library.gameCount}</strong>
               <span>공개 라이브러리 게임</span>
             </article>
-            <article>
+            <Link className="info-summary-link" to="/mypage/guides">
               <strong>{guideCount}</strong>
               <span>내가 작성한 공략</span>
-            </article>
+              <small>공략 목록 보기 →</small>
+            </Link>
             <article>
               <strong>
                 {isAchievementOverviewError

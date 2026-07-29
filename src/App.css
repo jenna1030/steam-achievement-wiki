@@ -712,7 +712,9 @@ dd {
 
 .steam-game-card.is-perfect {
   border: 4px double var(--color-red);
-  box-shadow: var(--shadow-panel);
+  box-shadow:
+    0 0 0 2px var(--color-navy),
+    var(--shadow-panel);
 }
 
 .library-achievement-progress {
@@ -732,13 +734,15 @@ dd {
 .perfect-game-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 9px;
+  min-height: 29px;
+  padding: 2px 10px 2px 6px;
   color: var(--color-paper);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
-  background: var(--color-red);
+  background: var(--color-navy);
+  border: 3px double var(--color-red);
   border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(16, 31, 69, 0.22);
 }
 
 .perfect-game-badge img {
@@ -1245,6 +1249,7 @@ dd {
 }
 
 .info-grid article,
+.info-summary-link,
 .guide-card,
 .empty-state,
 .editor-form,
@@ -1255,13 +1260,37 @@ dd {
   box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
 }
 
-.info-grid article {
+.info-grid article,
+.info-summary-link {
   padding: 18px;
 }
 
 .info-grid strong,
-.info-grid span {
+.info-grid span,
+.info-grid small {
   display: block;
+}
+
+.info-summary-link {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.info-summary-link:hover {
+  border-color: var(--color-red);
+  box-shadow: 0 18px 38px rgba(58, 45, 20, 0.13);
+  transform: translateY(-2px);
+}
+
+.info-summary-link small {
+  margin-top: 12px;
+  color: var(--color-link);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .completion-summary-card {
@@ -1531,8 +1560,10 @@ dd {
 .profile-panel {
   width: 100%;
   display: grid;
-  grid-template-areas: 'identity completion action';
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.7fr) auto;
+  grid-template-areas:
+    'identity completion'
+    'identity action';
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 0.85fr);
   gap: 18px;
   align-items: center;
   margin-bottom: 28px;
@@ -1611,6 +1642,7 @@ dd {
 
 .profile-panel > .secondary-button {
   grid-area: action;
+  justify-self: end;
 }
 
 .steam-profile-avatar {
@@ -1913,8 +1945,67 @@ dd {
   gap: 10px;
 }
 
-.target-selection-status .form-note {
-  margin: 0;
+.search-guidance,
+.selected-target-summary {
+  min-height: 76px;
+  padding: 13px 15px;
+  border-radius: 8px;
+}
+
+.search-guidance {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  color: var(--color-muted);
+  background: rgba(255, 250, 242, 0.74);
+  border: 1px dashed var(--color-line);
+}
+
+.search-guidance strong {
+  color: var(--color-navy);
+  font-size: 12px;
+}
+
+.search-guidance span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.search-guidance.is-active {
+  color: #dce6ff;
+  background: var(--color-navy);
+  border: 4px double var(--color-red);
+}
+
+.search-guidance.is-active strong {
+  color: #ffbbb5;
+}
+
+.selected-target-summary {
+  display: grid;
+  gap: 5px;
+  align-content: center;
+  background: #fffaf2;
+  border: 4px double var(--color-red);
+}
+
+.selected-target-summary > span {
+  color: var(--color-red);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.selected-target-summary strong {
+  color: var(--color-navy);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.selected-target-summary i {
+  padding: 0 4px;
+  color: var(--color-red);
+  font-style: normal;
 }
 
 .form-checkbox {
@@ -1927,6 +2018,41 @@ dd {
   background: #f7f5ee;
   border: 1px solid #e5dece;
   border-radius: 8px;
+}
+
+.my-guide-list {
+  display: grid;
+  gap: 14px;
+}
+
+.my-guide-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 22px;
+  background: var(--color-paper);
+  border: 4px double var(--color-line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
+}
+
+.my-guide-card h2 {
+  margin: 3px 0 8px;
+}
+
+.my-guide-card > div > span {
+  display: block;
+  margin-top: 12px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.my-guide-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 /* Visual system: navy frame, red rule lines, paper-like panels. */
@@ -2178,9 +2304,14 @@ button:hover,
 
   .profile-panel {
     grid-template-areas:
-      'identity action'
-      'completion completion';
-    grid-template-columns: minmax(0, 1fr) auto;
+      'identity'
+      'completion'
+      'action';
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panel > .secondary-button {
+    justify-self: end;
   }
 }
 
@@ -2206,7 +2337,8 @@ button:hover,
   .vote-panel,
   .vote-options,
   .checklist-card,
-  .recommendation-card {
+  .recommendation-card,
+  .my-guide-card {
     grid-template-columns: 1fr;
   }
 
@@ -2219,7 +2351,11 @@ button:hover,
   }
 
   .profile-panel > .secondary-button {
-    justify-self: start;
+    justify-self: end;
+  }
+
+  .my-guide-actions {
+    justify-content: flex-start;
   }
 
   .target-selection-status {

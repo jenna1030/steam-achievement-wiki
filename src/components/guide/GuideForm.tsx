@@ -136,6 +136,11 @@ export function GuideForm({
               value={selectedGameId}
               onChange={(event) => onGameChange(Number(event.target.value))}
             >
+              {selectedGameId === 0 && (
+                <option disabled value={0}>
+                  Steam 앱 선택
+                </option>
+              )}
               {gameOptions.map((game) => (
                 <option key={game.id} value={game.id}>
                   {game.title} #{game.id}
@@ -156,7 +161,16 @@ export function GuideForm({
           </label>
           <label>
             도전과제 선택
-            <select {...register('achievementId')}>
+            <select
+              {...register('achievementId', {
+                required: '도전과제를 선택해주세요.',
+              })}
+            >
+              {filteredAchievements.length === 0 && (
+                <option disabled value="">
+                  Steam 앱을 먼저 선택해주세요
+                </option>
+              )}
               {filteredAchievements.map((achievement) => (
                 <option key={achievement.id} value={achievement.id}>
                   {achievement.title}
@@ -166,7 +180,15 @@ export function GuideForm({
           </label>
         </div>
         <div className="target-selection-status">
-          <p className="form-note" role="status">
+          <div
+            aria-live="polite"
+            className={`search-guidance${
+              gameSearchQuery.trim().length < 2 ? ' is-active' : ''
+            }`}
+            role="status"
+          >
+            <strong>검색 안내</strong>
+            <span>
             {gameSearchQuery.trim().length < 2
               ? '게임명 또는 appid를 두 글자 이상 입력하면 Steam 앱을 검색합니다.'
               : isGameSearchLoading
@@ -174,11 +196,19 @@ export function GuideForm({
                 : isGameSearchError
                   ? '검색하지 못했습니다. API 서버 실행 상태를 확인해주세요.'
                   : `${gameOptions.length}개 앱을 선택할 수 있습니다.`}
-          </p>
-          <p className="form-note">
-            선택됨: {selectedGame?.title ?? '게임 없음'} /{' '}
-            {selectedAchievement?.title ?? '도전과제 없음'}
-          </p>
+            </span>
+          </div>
+          <div className="selected-target-summary">
+            <span>선택됨</span>
+            {selectedGame && selectedAchievement ? (
+              <strong>
+                {selectedGame.title} <i aria-hidden="true">/</i>{' '}
+                {selectedAchievement.title}
+              </strong>
+            ) : (
+              <strong>Steam 앱과 도전과제를 선택해주세요.</strong>
+            )}
+          </div>
         </div>
       </section>
       <label>

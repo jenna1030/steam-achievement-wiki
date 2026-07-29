@@ -45,6 +45,11 @@ const MyPage = lazy(() =>
     default: module.MyPage,
   })),
 )
+const MyGuidesPage = lazy(() =>
+  import('./pages/MyGuidesPage').then((module) => ({
+    default: module.MyGuidesPage,
+  })),
+)
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((module) => ({
     default: module.NotFoundPage,
@@ -79,6 +84,7 @@ function App() {
           <Route path="/checklist" element={<ChecklistPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/guides" element={<MyGuidesPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

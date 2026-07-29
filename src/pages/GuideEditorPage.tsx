@@ -11,7 +11,6 @@ import {
   useAchievementsQuery,
 } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
-import { useGamesQuery } from '../hooks/useGamesQuery'
 import { useSteamAppsQuery } from '../hooks/useSteamAppsQuery'
 import { useGuideStore } from '../stores/guideStore'
 import type { Achievement } from '../types/achievement'
@@ -35,27 +34,22 @@ export function GuideEditorPage() {
   const achievementId = normalizeAchievementId(
     searchParams.get('achievementId') ?? '',
   )
+  const userGuides = useGuideStore((state) => state.userGuides)
+  const editingGuide = userGuides.find((guide) => guide.id === guideId)
+  const defaultAchievementId = editingGuide?.achievementId ?? achievementId
   const [selectedGameId, setSelectedGameId] = useState(
-    getGameIdFromAchievementId(achievementId) ?? 1145350,
+    getGameIdFromAchievementId(defaultAchievementId) ?? 0,
   )
   const [gameSearchQuery, setGameSearchQuery] = useState('')
   const [debouncedGameSearchQuery, setDebouncedGameSearchQuery] = useState('')
-  const userGuides = useGuideStore((state) => state.userGuides)
   const addGuide = useGuideStore((state) => state.addGuide)
   const updateGuide = useGuideStore((state) => state.updateGuide)
-  const editingGuide = userGuides.find((guide) => guide.id === guideId)
   const stateAchievement = (location.state as GuideEditorLocationState | null)
     ?.achievement
-  const defaultAchievementId = editingGuide?.achievementId ?? achievementId
   const {
     data: defaultAchievement,
     isLoading: isDefaultAchievementLoading,
   } = useAchievementDetailQuery(defaultAchievementId)
-  const {
-    data: games = [],
-    isError: isGamesError,
-    isLoading: isGamesLoading,
-  } = useGamesQuery()
   const { data: selectedGame } = useGameDetailQuery(selectedGameId)
   const {
     data: searchedApps = [],
@@ -94,26 +88,20 @@ export function GuideEditorPage() {
       options.push(option)
     }
 
-    addOption(
-      selectedGame
-        ? { id: selectedGame.steamAppId, title: selectedGame.title }
-        : { id: selectedGameId, title: `Steam App #${selectedGameId}` },
-    )
-
-    if (debouncedGameSearchQuery.trim().length >= 2) {
-      searchedApps.forEach((app) =>
-        addOption({ id: app.appid, title: app.name }),
-      )
-    } else {
-      games.forEach((game) =>
-        addOption({ id: game.steamAppId, title: game.title }),
+    if (selectedGameId > 0) {
+      addOption(
+        selectedGame
+          ? { id: selectedGame.steamAppId, title: selectedGame.title }
+          : { id: selectedGameId, title: `Steam App #${selectedGameId}` },
       )
     }
 
+    searchedApps.forEach((app) =>
+      addOption({ id: app.appid, title: app.name }),
+    )
+
     return options
   }, [
-    debouncedGameSearchQuery,
-    games,
     searchedApps,
     selectedGame,
     selectedGameId,
@@ -133,10 +121,7 @@ export function GuideEditorPage() {
       return
     }
 
-    if (!resolvedDefaultAchievement && games.length > 0) {
-      setSelectedGameId(games[0].id)
-    }
-  }, [games, resolvedDefaultAchievement])
+  }, [resolvedDefaultAchievement])
 
   const handleSubmit = (values: GuideFormValues) => {
     const selectedAchievement = selectableAchievements.find(
@@ -176,14 +161,12 @@ export function GuideEditorPage() {
         )}
       </section>
 
-      {(isGamesLoading || isAchievementsLoading || isDefaultAchievementLoading) && (
+      {(isAchievementsLoading || isDefaultAchievementLoading) && (
         <LoadingState message="공략 작성 대상을 불러오는 중입니다." />
       )}
-      {(isGamesError || isAchievementsError) && <ErrorState />}
-      {!isGamesLoading &&
-        !isAchievementsLoading &&
+      {isAchievementsError && <ErrorState />}
+      {!isAchievementsLoading &&
         !isDefaultAchievementLoading &&
-        !isGamesError &&
         !isAchievementsError && (
           <GuideForm
             achievements={selectableAchievements}
