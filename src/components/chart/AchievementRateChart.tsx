@@ -39,7 +39,7 @@ function getChartData(
     )
     .slice(0, 6)
     .map((achievement): ChartAchievement => {
-      const gameTitle = gamesById.get(achievement.gameId) ?? 'Unknown Game'
+      const gameTitle = gamesById.get(achievement.gameId) ?? '게임 정보 없음'
       const title =
         achievement.title.length > 10
           ? `${achievement.title.slice(0, 10)}...`
@@ -68,9 +68,7 @@ function RateChartBlock({
       <h3>{title}</h3>
       <div className="chart-box">
         <ResponsiveContainer height={260} width="100%">
-          <BarChart
-            data={data}
-          >
+          <BarChart data={data}>
             <CartesianGrid stroke="#ded2c1" strokeDasharray="3 3" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />

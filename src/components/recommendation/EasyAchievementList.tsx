@@ -13,7 +13,7 @@ export function EasyAchievementList({
       {recommendations.map(({ achievement, game, reason }) => (
         <article className="recommendation-card" key={achievement.id}>
           <div>
-            <p>{game?.title ?? 'Unknown Game'}</p>
+            <p>{game?.title ?? '게임 정보 없음'}</p>
             <h3>{achievement.title}</h3>
             <span>{reason}</span>
           </div>
@@ -31,13 +31,13 @@ export function EasyAchievementList({
               </dd>
             </div>
           </dl>
-          {achievement.source === 'steam' ? (
-            <span className="disabled-link">Steam API 항목</span>
-          ) : (
-            <Link className="text-link" to={`/achievements/${achievement.id}`}>
-              공략 보기
-            </Link>
-          )}
+          <Link
+            className="text-link"
+            state={{ achievement }}
+            to={`/achievements/${achievement.id}`}
+          >
+            상세 보기
+          </Link>
         </article>
       ))}
     </div>

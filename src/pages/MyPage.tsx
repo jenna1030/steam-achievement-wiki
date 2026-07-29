@@ -3,10 +3,18 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
+import type { SteamOwnedGame } from '../apis/steamApi'
 import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 
 const PAGE_SIZE = 20
+type LibrarySortOption = 'playtime-desc' | 'recent-desc' | 'name-asc'
+
+const sortLabels: Record<LibrarySortOption, string> = {
+  'playtime-desc': '플레이 시간 많은 순',
+  'recent-desc': '최근 2주 플레이 많은 순',
+  'name-asc': '이름순',
+}
 
 function formatPlaytime(minutes: number) {
   if (minutes < 60) {
@@ -30,29 +38,52 @@ function LibrarySkeleton() {
   )
 }
 
+function sortLibraryGames(
+  games: SteamOwnedGame[],
+  sortOption: LibrarySortOption,
+) {
+  return games.slice().sort((a, b) => {
+    if (sortOption === 'name-asc') {
+      return a.name.localeCompare(b.name)
+    }
+
+    if (sortOption === 'recent-desc') {
+      return (b.playtime_2weeks ?? 0) - (a.playtime_2weeks ?? 0)
+    }
+
+    return b.playtime_forever - a.playtime_forever
+  })
+}
+
 export function MyPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
   const guideCount = useGuideStore((state) => state.userGuides.length)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [sortOption, setSortOption] =
+    useState<LibrarySortOption>('playtime-desc')
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const {
     data: library,
     isError,
     isLoading,
   } = useSteamLibraryQuery(user?.steamId)
+  const sortedGames = useMemo(
+    () => sortLibraryGames(library?.games ?? [], sortOption),
+    [library?.games, sortOption],
+  )
   const visibleGames = useMemo(
-    () => library?.games.slice(0, visibleCount) ?? [],
-    [library?.games, visibleCount],
+    () => sortedGames.slice(0, visibleCount),
+    [sortedGames, visibleCount],
   )
   const hasMoreGames = Boolean(
-    library && visibleGames.length < library.games.length,
+    library && visibleGames.length < sortedGames.length,
   )
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }, [user?.steamId])
+  }, [sortOption, user?.steamId])
 
   useEffect(() => {
     if (!hasMoreGames) {
@@ -160,9 +191,26 @@ export function MyPage() {
                   <p className="eyebrow">Library</p>
                   <h2>내 Steam 게임</h2>
                 </div>
-                <span>
-                  {visibleGames.length} / {library.games.length}개 표시
-                </span>
+                <div className="library-list-controls">
+                  <span>
+                    {visibleGames.length} / {library.games.length}개 표시
+                  </span>
+                  <label>
+                    정렬 기준
+                    <select
+                      value={sortOption}
+                      onChange={(event) =>
+                        setSortOption(event.target.value as LibrarySortOption)
+                      }
+                    >
+                      {Object.entries(sortLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
               <section className="steam-game-grid">
                 {visibleGames.map((game) => (
