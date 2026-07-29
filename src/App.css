@@ -590,6 +590,25 @@ dd {
   margin-top: 14px;
 }
 
+.library-list-heading {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.library-list-heading h2 {
+  margin-bottom: 0;
+}
+
+.library-list-heading span {
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .skeleton-card {
   pointer-events: none;
 }

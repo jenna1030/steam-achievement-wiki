@@ -4,6 +4,7 @@ import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
 import { useAuthStore } from '../stores/authStore'
+import { useGuideStore } from '../stores/guideStore'
 
 const PAGE_SIZE = 20
 
@@ -33,6 +34,7 @@ export function MyPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const guideCount = useGuideStore((state) => state.userGuides.length)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const {
@@ -135,8 +137,8 @@ export function MyPage() {
               <span>공개 라이브러리 게임</span>
             </article>
             <article>
-              <strong>{visibleGames.length}</strong>
-              <span>화면 표시 항목</span>
+              <strong>{guideCount}</strong>
+              <span>내가 작성한 공략</span>
             </article>
             <article>
               <strong>
@@ -153,6 +155,15 @@ export function MyPage() {
 
           {library.games.length > 0 ? (
             <>
+              <div className="library-list-heading">
+                <div>
+                  <p className="eyebrow">Library</p>
+                  <h2>내 Steam 게임</h2>
+                </div>
+                <span>
+                  {visibleGames.length} / {library.games.length}개 표시
+                </span>
+              </div>
               <section className="steam-game-grid">
                 {visibleGames.map((game) => (
                   <article className="steam-game-card" key={game.appid}>
