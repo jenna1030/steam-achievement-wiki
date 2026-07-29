@@ -29,6 +29,7 @@ export interface SteamStoreGame {
   image: string
   releaseDate: string
   genres: string[]
+  tags: string[]
   hasAchievements: boolean
 }
 
@@ -56,6 +57,7 @@ interface SteamAppListResponse {
 
 interface SteamStoreGamesResponse {
   apps: SteamStoreGame[]
+  tagCatalog: string[]
   start: number
   count: number
   totalCount: number
@@ -126,15 +128,18 @@ export async function fetchSteamAppList(query: string) {
 
 export async function fetchSteamStoreGames({
   query,
+  tag,
   start,
   count = 20,
 }: {
   query: string
+  tag: string
   start: number
   count?: number
 }) {
   const params = new URLSearchParams({
     query,
+    tag,
     start: String(start),
     count: String(count),
     filter: query.trim() ? '' : 'globaltopsellers',
@@ -149,9 +154,11 @@ export async function fetchSteamStoreGames({
 
   if (
     !Array.isArray(data.apps) ||
+    !Array.isArray(data.tagCatalog) ||
     data.apps.some(
       (game) =>
         !Array.isArray(game.genres) ||
+        !Array.isArray(game.tags) ||
         typeof game.hasAchievements !== 'boolean',
     )
   ) {

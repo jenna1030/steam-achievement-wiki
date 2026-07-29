@@ -3,7 +3,7 @@ import type { GameSearchFilters } from '../../types/search'
 
 interface GameSearchFormProps {
   filters: GameSearchFilters
-  genres: string[]
+  classifications: string[]
   resultCount: number
   onChange: (filters: GameSearchFilters) => void
   onSubmit: () => void
@@ -11,29 +11,29 @@ interface GameSearchFormProps {
 
 export function GameSearchForm({
   filters,
-  genres,
+  classifications,
   resultCount,
   onChange,
   onSubmit,
 }: GameSearchFormProps) {
   const [genreSearchQuery, setGenreSearchQuery] = useState('')
   const [isGenreListOpen, setIsGenreListOpen] = useState(false)
-  const visibleGenres = useMemo(() => {
+  const visibleClassifications = useMemo(() => {
     const normalizedQuery = genreSearchQuery.trim().toLocaleLowerCase('ko')
     return normalizedQuery
-      ? genres.filter((genre) =>
-          genre.toLocaleLowerCase('ko').includes(normalizedQuery),
+      ? classifications.filter((classification) =>
+          classification.toLocaleLowerCase('ko').includes(normalizedQuery),
         )
-      : genres
-  }, [genreSearchQuery, genres])
+      : classifications
+  }, [classifications, genreSearchQuery])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     onSubmit()
   }
-  const handleGenreSelect = (genre: string) => {
-    onChange({ ...filters, genre })
-    setGenreSearchQuery(genre === 'all' ? '' : genre)
+  const handleClassificationSelect = (classification: string) => {
+    onChange({ ...filters, genre: classification })
+    setGenreSearchQuery(classification === 'all' ? '' : classification)
     setIsGenreListOpen(false)
   }
   const handleGenreBlur = (event: FocusEvent<HTMLDivElement>) => {
@@ -62,7 +62,7 @@ export function GameSearchForm({
         />
       </label>
       <div className="genre-combobox" onBlur={handleGenreBlur}>
-        <label htmlFor="genre-combobox-input">장르</label>
+        <label htmlFor="genre-combobox-input">장르·태그</label>
         <input
           id="genre-combobox-input"
           type="search"
@@ -73,7 +73,7 @@ export function GameSearchForm({
           value={genreSearchQuery}
           placeholder={
             filters.genre === 'all'
-              ? '전체 장르에서 검색'
+              ? '장르·태그 검색'
               : `${filters.genre} 선택됨`
           }
           onChange={(event) => {
@@ -92,9 +92,12 @@ export function GameSearchForm({
               )
             }
 
-            if (event.key === 'Enter' && visibleGenres.length === 1) {
+            if (
+              event.key === 'Enter' &&
+              visibleClassifications.length === 1
+            ) {
               event.preventDefault()
-              handleGenreSelect(visibleGenres[0])
+              handleClassificationSelect(visibleClassifications[0])
             }
           }}
         />
@@ -103,7 +106,7 @@ export function GameSearchForm({
             className="genre-combobox-list"
             id="genre-combobox-list"
             role="listbox"
-            aria-label="장르 검색 결과"
+            aria-label="장르·태그 검색 결과"
           >
             {!genreSearchQuery.trim() && (
               <button
@@ -111,25 +114,28 @@ export function GameSearchForm({
                 type="button"
                 role="option"
                 aria-selected={filters.genre === 'all'}
-                onClick={() => handleGenreSelect('all')}
+                onClick={() => handleClassificationSelect('all')}
               >
-                전체 장르
+                전체 장르·태그
               </button>
             )}
-            {visibleGenres.map((genre) => (
+            {visibleClassifications.map((classification) => (
               <button
                 className="genre-combobox-option"
-                key={genre}
+                key={classification}
                 type="button"
                 role="option"
-                aria-selected={filters.genre === genre}
-                onClick={() => handleGenreSelect(genre)}
+                aria-selected={filters.genre === classification}
+                onClick={() => handleClassificationSelect(classification)}
               >
-                {genre}
+                {classification}
               </button>
             ))}
-            {genres.length > 0 && visibleGenres.length === 0 && (
-              <p className="genre-combobox-empty">일치하는 장르가 없습니다.</p>
+            {classifications.length > 0 &&
+              visibleClassifications.length === 0 && (
+              <p className="genre-combobox-empty">
+                일치하는 장르·태그가 없습니다.
+              </p>
             )}
           </div>
         )}

@@ -43,6 +43,7 @@ const SESSION_SECRET =
 const SESSION_COOKIE_NAME = 'steam_achievement_session'
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 let steamAppsCache = null
+let steamPopularTagsCache = null
 const steamStoreDetailsCache = new Map()
 
 function sendJson(response, statusCode, data) {
@@ -173,6 +174,27 @@ function getStoreGenres(storeDetails) {
     .filter(Boolean)
 }
 
+async function fetchSteamPopularTags() {
+  if (steamPopularTagsCache) {
+    return steamPopularTagsCache
+  }
+
+  const tags = await fetchJson(
+    'https://store.steampowered.com/tagdata/populartags/koreana',
+  )
+
+  steamPopularTagsCache = Array.isArray(tags)
+    ? tags
+        .map((tag) => ({
+          id: Number(tag.tagid),
+          name: String(tag.name ?? '').trim(),
+        }))
+        .filter((tag) => Number.isFinite(tag.id) && tag.name)
+    : []
+
+  return steamPopularTagsCache
+}
+
 function createSteamGame(app, storeDetails) {
   const appid = Number(app.appid)
   const genres = getStoreGenres(storeDetails)
@@ -230,6 +252,10 @@ function parseStoreSearchResults(resultsHtml) {
       const releaseDate = stripHtml(
         row.match(/<div class="col search_released responsive_secondrow">([\s\S]*?)<\/div>/)?.[1],
       )
+      const tagIds = [
+        ...(row.match(/data-ds-tagids="\[([^\]]*)\]"/)?.[1].matchAll(/\d+/g) ??
+          []),
+      ].map((match) => Number(match[0]))
 
       if (!Number.isFinite(appId) || !title) {
         return null
@@ -240,12 +266,13 @@ function parseStoreSearchResults(resultsHtml) {
         name: title,
         image,
         releaseDate,
+        tagIds,
       }
     })
     .filter(Boolean)
 }
 
-async function enrichSteamStoreGames(apps) {
+async function enrichSteamStoreGames(apps, tagNameById) {
   const enrichedApps = []
   const batchSize = 8
 
@@ -253,21 +280,28 @@ async function enrichSteamStoreGames(apps) {
     const batch = apps.slice(index, index + batchSize)
     const results = await Promise.all(
       batch.map(async (app) => {
+        const { tagIds, ...baseApp } = app
+        const tags = tagIds
+          .map((tagId) => tagNameById.get(tagId))
+          .filter(Boolean)
+
         try {
           const details = await fetchSteamStoreDetails(app.appid)
           const genres = getStoreGenres(details)
 
           return {
-            ...app,
+            ...baseApp,
             image: details?.header_image ?? app.image,
             releaseDate: details?.release_date?.date || app.releaseDate,
             genres,
+            tags,
             hasAchievements: Number(details?.achievements?.total ?? 0) > 0,
           }
         } catch {
           return {
-            ...app,
+            ...baseApp,
             genres: [],
+            tags,
             hasAchievements: false,
           }
         }
@@ -285,6 +319,7 @@ async function handleSteamStoreGames(requestUrl, response) {
   const start = Math.max(Number(requestUrl.searchParams.get('start') ?? 0), 0)
   const count = Math.min(Number(requestUrl.searchParams.get('count') ?? 20), 50)
   const filter = requestUrl.searchParams.get('filter') ?? 'globaltopsellers'
+  const selectedTagName = requestUrl.searchParams.get('tag')?.trim() ?? ''
   const storeUrl = new URL('https://store.steampowered.com/search/results/')
 
   storeUrl.searchParams.set('query', query)
@@ -295,14 +330,31 @@ async function handleSteamStoreGames(requestUrl, response) {
   storeUrl.searchParams.set('filter', filter)
   storeUrl.searchParams.set('category1', '998')
   storeUrl.searchParams.set('infinite', '1')
+  storeUrl.searchParams.set('l', 'koreana')
+  storeUrl.searchParams.set('cc', 'kr')
 
   try {
+    const popularTags = await fetchSteamPopularTags()
+    const tagNameById = new Map(
+      popularTags.map((tag) => [tag.id, tag.name]),
+    )
+    const selectedTag = popularTags.find(
+      (tag) =>
+        tag.name.toLocaleLowerCase('ko') ===
+        selectedTagName.toLocaleLowerCase('ko'),
+    )
+
+    if (selectedTag) {
+      storeUrl.searchParams.set('tags', String(selectedTag.id))
+    }
+
     const data = await fetchJson(storeUrl)
     const parsedApps = parseStoreSearchResults(data?.results_html).slice(0, count)
-    const apps = await enrichSteamStoreGames(parsedApps)
+    const apps = await enrichSteamStoreGames(parsedApps, tagNameById)
 
     sendJson(response, 200, {
       apps,
+      tagCatalog: popularTags.map((tag) => tag.name),
       start,
       count,
       totalCount: Number(data?.total_count ?? apps.length),

@@ -27,29 +27,33 @@ export function GameSearchPage() {
     isError,
     isFetchingNextPage,
     isLoading,
-  } = useSteamStoreGamesQuery(submittedQuery)
+  } = useSteamStoreGamesQuery(submittedQuery, filters.genre)
   const loadedGames = useMemo(
     () => data?.pages.flatMap((page) => page.apps) ?? [],
     [data],
   )
-  const genres = useMemo(
+  const classifications = useMemo(
     () =>
       Array.from(
-        new Set(loadedGames.flatMap((game) => game.genres ?? [])),
+        new Set([
+          ...(data?.pages[0]?.tagCatalog ?? []),
+          ...loadedGames.flatMap((game) => [
+            ...(game.genres ?? []),
+            ...(game.tags ?? []),
+          ]),
+        ]),
       ).sort((a, b) => a.localeCompare(b, 'ko')),
-    [loadedGames],
+    [data, loadedGames],
   )
   const games = useMemo(
     () =>
       loadedGames.filter((game) => {
-        const matchesGenre =
-          filters.genre === 'all' || game.genres?.includes(filters.genre)
         const matchesAchievementFilter =
           filters.achievementFilter === 'all' || game.hasAchievements
 
-        return matchesGenre && matchesAchievementFilter
+        return matchesAchievementFilter
       }),
-    [filters.achievementFilter, filters.genre, loadedGames],
+    [filters.achievementFilter, loadedGames],
   )
   const totalCount = data?.pages[0]?.totalCount ?? 0
   const isFiltering =
@@ -68,7 +72,7 @@ export function GameSearchPage() {
 
       <GameSearchForm
         filters={filters}
-        genres={genres}
+        classifications={classifications}
         resultCount={games.length}
         onChange={setFilters}
         onSubmit={() => {
@@ -154,12 +158,18 @@ export function GameSearchPage() {
                       </p>
                       <h3>{game.name}</h3>
                       <div className="game-genre-row">
-                        {(game.genres?.length ?? 0) > 0 ? (
-                          game.genres.slice(0, 3).map((genre) => (
-                            <span key={genre}>{genre}</span>
-                          ))
+                        {game.genres.length + game.tags.length > 0 ? (
+                          Array.from(
+                            new Set([...game.genres, ...game.tags]),
+                          )
+                            .slice(0, 3)
+                            .map((classification) => (
+                              <span key={classification}>
+                                {classification}
+                              </span>
+                            ))
                         ) : (
-                          <span>장르 정보 없음</span>
+                          <span>장르·태그 정보 없음</span>
                         )}
                       </div>
                     </div>
