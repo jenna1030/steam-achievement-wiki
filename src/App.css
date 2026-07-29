@@ -819,21 +819,23 @@ dd {
 .library-list-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: end;
+  gap: 10px 16px;
+  align-items: center;
   justify-content: flex-end;
 }
 
 .library-list-controls label {
-  display: grid;
-  gap: 6px;
-  min-width: 190px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
   color: var(--color-muted);
   font-size: 13px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .library-list-controls select {
+  min-width: 190px;
   min-height: 38px;
   padding: 0 10px;
 }
@@ -1561,11 +1563,11 @@ dd {
   width: 100%;
   display: grid;
   grid-template-areas:
-    'identity completion'
-    'identity action';
+    'identity action'
+    'identity completion';
   grid-template-columns: minmax(0, 1fr) minmax(380px, 0.85fr);
   gap: 18px;
-  align-items: center;
+  align-items: start;
   margin-bottom: 28px;
 }
 
@@ -1642,6 +1644,7 @@ dd {
 
 .profile-panel > .secondary-button {
   grid-area: action;
+  align-self: start;
   justify-self: end;
 }
 
@@ -2302,17 +2305,6 @@ button:hover,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .profile-panel {
-    grid-template-areas:
-      'identity'
-      'completion'
-      'action';
-    grid-template-columns: 1fr;
-  }
-
-  .profile-panel > .secondary-button {
-    justify-self: end;
-  }
 }
 
 @media (max-width: 900px) {
@@ -2344,9 +2336,9 @@ button:hover,
 
   .profile-panel {
     grid-template-areas:
+      'action'
       'identity'
-      'completion'
-      'action';
+      'completion';
     grid-template-columns: 1fr;
   }
 
