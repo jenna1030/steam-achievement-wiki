@@ -85,26 +85,37 @@
   }
 
   .topbar {
-    display: grid;
-    grid-template-areas:
-      'brand actions'
-      'nav nav';
-    grid-template-columns: minmax(0, 1fr) auto;
+    flex-direction: row;
     align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
   }
 
   .brand {
-    grid-area: brand;
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .nav {
-    grid-area: nav;
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .nav-link {
+    padding-inline: 8px;
+    white-space: nowrap;
   }
 
   .topbar-actions {
-    grid-area: actions;
+    flex: 0 0 auto;
     flex-wrap: nowrap;
-    justify-self: end;
+  }
+
+  .login-link,
+  .header-logout-button {
+    white-space: nowrap;
   }
 
   .game-grid,
@@ -141,11 +152,27 @@
 
 @media (max-width: 520px) {
   .topbar {
+    display: grid;
+    grid-template-areas:
+      'brand actions'
+      'nav nav';
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px;
   }
 
   .brand {
+    grid-area: brand;
     font-size: 16px;
+  }
+
+  .nav {
+    grid-area: nav;
+    justify-content: flex-start;
+  }
+
+  .topbar-actions {
+    grid-area: actions;
+    justify-self: end;
   }
 
   .profile-panel {
