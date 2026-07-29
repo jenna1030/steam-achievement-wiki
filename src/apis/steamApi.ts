@@ -156,7 +156,7 @@ export async function fetchSteamAchievements(steamAppId: number) {
 export async function fetchSteamAppList(query: string) {
   const params = new URLSearchParams({
     query,
-    limit: '12',
+    limit: '30',
   })
   const response = await fetch(`/api/steam/apps?${params}`)
 

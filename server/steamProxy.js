@@ -443,7 +443,7 @@ async function fetchSteamApps(key) {
 
 async function handleSteamApps(requestUrl, response) {
   const query = requestUrl.searchParams.get('query') ?? ''
-  const limit = Math.min(Number(requestUrl.searchParams.get('limit') ?? 12), 30)
+  const limit = Math.min(Number(requestUrl.searchParams.get('limit') ?? 30), 30)
   const key = getSteamApiKey()
 
   if (query.trim().length < 2) {
