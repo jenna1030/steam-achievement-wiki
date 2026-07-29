@@ -6,6 +6,8 @@ import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { useAchievementsQuery } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
+import { useSteamPlayerAchievementsQuery } from '../hooks/useSteamPlayerAchievementsQuery'
+import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 import type { AchievementSortOption } from '../types/achievement'
 import {
@@ -22,6 +24,7 @@ export function GameDetailPage() {
     useState<AchievementSortOption>('rate-desc')
   const [selectedTag, setSelectedTag] = useState('all')
   const [showHidden, setShowHidden] = useState(false)
+  const user = useAuthStore((state) => state.user)
   const {
     data: game,
     error: gameError,
@@ -33,6 +36,20 @@ export function GameDetailPage() {
     isError: isAchievementsError,
     isLoading: isAchievementsLoading,
   } = useAchievementsQuery(gameIdNumber)
+  const {
+    data: playerProgress,
+    isLoading: isPlayerProgressLoading,
+  } = useSteamPlayerAchievementsQuery(user?.steamId, gameIdNumber)
+  const playerAchievementsByName = useMemo(
+    () =>
+      new Map(
+        playerProgress?.achievements.map((achievement) => [
+          achievement.name,
+          achievement,
+        ]) ?? [],
+      ),
+    [playerProgress?.achievements],
+  )
   const userGuides = useGuideStore((state) => state.userGuides)
   const achievements = useMemo(
     () =>
@@ -114,6 +131,12 @@ export function GameDetailPage() {
         <div>
           <p className="eyebrow">Steam App #{game.steamAppId}</p>
           <h1>{game.title}</h1>
+          {playerProgress?.isPerfect && (
+            <div className="game-completion-badge">
+              <strong>100% 완료</strong>
+              <span>이 게임의 도전과제를 모두 달성했습니다.</span>
+            </div>
+          )}
           <p className="muted">{game.description}</p>
           <dl>
             <div>
@@ -148,9 +171,35 @@ export function GameDetailPage() {
       </section>
 
       <section className="section embedded-section">
-        <div className="section-heading">
-          <p className="eyebrow">Achievements</p>
-          <h2>도전과제 목록</h2>
+        <div className="achievement-section-heading">
+          <div className="section-heading">
+            <p className="eyebrow">Achievements</p>
+            <h2>도전과제 목록</h2>
+          </div>
+          {user && isPlayerProgressLoading && (
+            <p className="personal-achievement-summary" role="status">
+              내 달성 현황 확인 중…
+            </p>
+          )}
+          {user && playerProgress?.supported && (
+            <p className="personal-achievement-summary">
+              내 달성 현황{' '}
+              <strong>
+                {playerProgress.achievedCount} / {playerProgress.totalCount}
+              </strong>
+              {playerProgress.isPerfect && (
+                <span className="perfect-game-badge">완전 공략</span>
+              )}
+            </p>
+          )}
+          {user &&
+            !isPlayerProgressLoading &&
+            playerProgress &&
+            !playerProgress.supported && (
+              <p className="personal-achievement-summary muted">
+                이 게임의 개인 달성 정보는 비공개이거나 제공되지 않습니다.
+              </p>
+            )}
         </div>
         {isAchievementsLoading && (
           <LoadingState message="도전과제 목록을 불러오는 중입니다." />
@@ -178,7 +227,24 @@ export function GameDetailPage() {
         visibleAchievements.length > 0 ? (
           <div className="achievement-list">
             {visibleAchievements.map((achievement) => (
-              <AchievementCard achievement={achievement} key={achievement.id} />
+              <AchievementCard
+                achievement={achievement}
+                isUnlocked={
+                  achievement.steamAchievementName
+                    ? playerAchievementsByName.get(
+                        achievement.steamAchievementName,
+                      )?.achieved
+                    : false
+                }
+                key={achievement.id}
+                unlockTime={
+                  achievement.steamAchievementName
+                    ? playerAchievementsByName.get(
+                        achievement.steamAchievementName,
+                      )?.unlockTime
+                    : undefined
+                }
+              />
             ))}
           </div>
         ) : null}

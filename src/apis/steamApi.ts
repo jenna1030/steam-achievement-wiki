@@ -39,6 +39,33 @@ export interface SteamOwnedGame {
   img_icon_url?: string
   playtime_forever: number
   playtime_2weeks?: number
+  has_community_visible_stats?: boolean
+}
+
+export interface SteamProfile {
+  steamId: string
+  personName: string
+  profileUrl: string
+  avatar: string
+  avatarMedium: string
+  avatarFull: string
+  isPublic: boolean
+}
+
+export interface SteamPlayerAchievement {
+  name: string
+  achieved: boolean
+  unlockTime: number
+}
+
+export interface SteamPlayerAchievementProgress {
+  appid: number
+  gameName: string
+  supported: boolean
+  achievedCount: number
+  totalCount: number
+  isPerfect: boolean
+  achievements: SteamPlayerAchievement[]
 }
 
 interface SteamGlobalAchievementResponse {
@@ -70,6 +97,22 @@ interface SteamGameResponse {
 interface SteamLibraryResponse {
   gameCount: number
   games: SteamOwnedGame[]
+}
+
+interface SteamProfileResponse {
+  profile: SteamProfile
+}
+
+interface SteamPlayerAchievementResponse {
+  progress: SteamPlayerAchievementProgress
+}
+
+export interface SteamAchievementOverviewPage {
+  start: number
+  count: number
+  totalGames: number
+  nextStart: number | null
+  games: SteamPlayerAchievementProgress[]
 }
 
 export interface SteamSessionUser {
@@ -201,6 +244,48 @@ export async function fetchSteamLibrary() {
   }
 
   return (await response.json()) as SteamLibraryResponse
+}
+
+export async function fetchSteamProfile() {
+  const response = await fetch('/api/steam/profile', {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error('Steam 프로필을 불러오지 못했습니다.')
+  }
+
+  const data = (await response.json()) as SteamProfileResponse
+
+  return data.profile
+}
+
+export async function fetchSteamPlayerAchievements(steamAppId: number) {
+  const response = await fetch(
+    `/api/steam/player-achievements?appid=${steamAppId}`,
+    { credentials: 'include' },
+  )
+
+  if (!response.ok) {
+    throw new Error('내 Steam 도전과제 진행률을 불러오지 못했습니다.')
+  }
+
+  const data = (await response.json()) as SteamPlayerAchievementResponse
+
+  return data.progress
+}
+
+export async function fetchSteamAchievementOverview(start: number) {
+  const response = await fetch(
+    `/api/steam/achievement-overview?start=${start}`,
+    { credentials: 'include' },
+  )
+
+  if (!response.ok) {
+    throw new Error('Steam 도전과제 달성 현황을 집계하지 못했습니다.')
+  }
+
+  return (await response.json()) as SteamAchievementOverviewPage
 }
 
 export async function fetchSteamSession() {

@@ -42,9 +42,17 @@ const SESSION_SECRET =
   (process.env.VERCEL ? '' : 'steam-achievement-wiki-local-development')
 const SESSION_COOKIE_NAME = 'steam_achievement_session'
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+const PROFILE_CACHE_MS = 1000 * 60 * 10
+const LIBRARY_CACHE_MS = 1000 * 60 * 10
+const PLAYER_ACHIEVEMENT_CACHE_MS = 1000 * 60 * 15
+const ACHIEVEMENT_OVERVIEW_PAGE_SIZE = 20
+const ACHIEVEMENT_REQUEST_CONCURRENCY = 5
 let steamAppsCache = null
 let steamPopularTagsCache = null
 const steamStoreDetailsCache = new Map()
+const steamProfileCache = new Map()
+const steamLibraryCache = new Map()
+const playerAchievementCache = new Map()
 
 function sendJson(response, statusCode, data) {
   response.writeHead(statusCode, {
@@ -75,6 +83,48 @@ async function fetchJson(url) {
   }
 
   return response.json()
+}
+
+function getFreshCacheValue(cache, key) {
+  const cached = cache.get(key)
+
+  if (!cached || cached.expiresAt <= Date.now()) {
+    cache.delete(key)
+    return null
+  }
+
+  return cached.value
+}
+
+function setCacheValue(cache, key, value, duration) {
+  cache.set(key, {
+    expiresAt: Date.now() + duration,
+    value,
+  })
+
+  return value
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const results = new Array(items.length)
+  let nextIndex = 0
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      results[currentIndex] = await mapper(items[currentIndex])
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(concurrency, items.length) },
+      () => worker(),
+    ),
+  )
+
+  return results
 }
 
 function getSchemaAchievements(schemaData) {
@@ -672,19 +722,56 @@ function sendJsonWithHeaders(response, statusCode, data, headers) {
   response.end(JSON.stringify(data))
 }
 
-async function handleSteamLibrary(request, response) {
+function getAuthenticatedSteamId(request) {
   const token = getCookie(request, SESSION_COOKIE_NAME)
-  const steamid = verifySessionToken(token)
-  const key = getSteamApiKey()
 
-  if (!steamid) {
-    sendJson(response, 401, { message: 'Steam login is required.' })
-    return
+  return verifySessionToken(token)
+}
+
+async function fetchSteamProfile(key, steamid) {
+  const cachedProfile = getFreshCacheValue(steamProfileCache, steamid)
+
+  if (cachedProfile) {
+    return cachedProfile
   }
 
-  if (!key) {
-    sendJson(response, 500, { message: 'STEAM_API_KEY is missing.' })
-    return
+  const profileUrl = new URL(
+    'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/',
+  )
+  profileUrl.searchParams.set('key', key)
+  profileUrl.searchParams.set('steamids', steamid)
+  profileUrl.searchParams.set('format', 'json')
+
+  const data = await fetchJson(profileUrl)
+  const player = data?.response?.players?.[0]
+
+  if (!player) {
+    return null
+  }
+
+  return setCacheValue(
+    steamProfileCache,
+    steamid,
+    {
+      steamId: String(player.steamid),
+      personName: String(player.personaname ?? ''),
+      profileUrl: String(player.profileurl ?? ''),
+      avatar: String(player.avatar ?? ''),
+      avatarMedium: String(player.avatarmedium ?? player.avatar ?? ''),
+      avatarFull: String(
+        player.avatarfull ?? player.avatarmedium ?? player.avatar ?? '',
+      ),
+      isPublic: Number(player.communityvisibilitystate) === 3,
+    },
+    PROFILE_CACHE_MS,
+  )
+}
+
+async function fetchSteamLibraryData(key, steamid) {
+  const cachedLibrary = getFreshCacheValue(steamLibraryCache, steamid)
+
+  if (cachedLibrary) {
+    return cachedLibrary
   }
 
   const libraryUrl = new URL(
@@ -696,12 +783,244 @@ async function handleSteamLibrary(request, response) {
   libraryUrl.searchParams.set('include_played_free_games', 'true')
   libraryUrl.searchParams.set('format', 'json')
 
+  const data = await fetchJson(libraryUrl)
+  const games = data?.response?.games ?? []
+
+  return setCacheValue(
+    steamLibraryCache,
+    steamid,
+    {
+      gameCount: Number(data?.response?.game_count ?? games.length),
+      games,
+    },
+    LIBRARY_CACHE_MS,
+  )
+}
+
+function createUnsupportedAchievementProgress(appid) {
+  return {
+    appid: Number(appid),
+    gameName: '',
+    supported: false,
+    achievedCount: 0,
+    totalCount: 0,
+    isPerfect: false,
+    achievements: [],
+  }
+}
+
+async function fetchPlayerAchievementProgress(key, steamid, appid) {
+  const cacheKey = `${steamid}:${appid}`
+  const cachedProgress = getFreshCacheValue(playerAchievementCache, cacheKey)
+
+  if (cachedProgress) {
+    return cachedProgress
+  }
+
+  const achievementsUrl = new URL(
+    'https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/',
+  )
+  achievementsUrl.searchParams.set('key', key)
+  achievementsUrl.searchParams.set('steamid', steamid)
+  achievementsUrl.searchParams.set('appid', String(appid))
+  achievementsUrl.searchParams.set('l', 'koreana')
+  achievementsUrl.searchParams.set('format', 'json')
+
   try {
-    const data = await fetchJson(libraryUrl)
-    const games = data?.response?.games ?? []
+    const steamResponse = await fetch(achievementsUrl)
+
+    if (!steamResponse.ok) {
+      return setCacheValue(
+        playerAchievementCache,
+        cacheKey,
+        createUnsupportedAchievementProgress(appid),
+        PLAYER_ACHIEVEMENT_CACHE_MS,
+      )
+    }
+
+    const data = await steamResponse.json()
+    const playerStats = data?.playerstats
+    const rawAchievements = playerStats?.achievements
+
+    if (
+      playerStats?.success === false ||
+      !Array.isArray(rawAchievements)
+    ) {
+      return setCacheValue(
+        playerAchievementCache,
+        cacheKey,
+        createUnsupportedAchievementProgress(appid),
+        PLAYER_ACHIEVEMENT_CACHE_MS,
+      )
+    }
+
+    const achievements = rawAchievements.map((achievement) => ({
+      name: String(achievement.apiname ?? ''),
+      achieved: Number(achievement.achieved) === 1,
+      unlockTime: Number(achievement.unlocktime ?? 0),
+    }))
+    const achievedCount = achievements.filter(
+      (achievement) => achievement.achieved,
+    ).length
+    const progress = {
+      appid: Number(appid),
+      gameName: String(playerStats.gameName ?? ''),
+      supported: true,
+      achievedCount,
+      totalCount: achievements.length,
+      isPerfect:
+        achievements.length > 0 && achievedCount === achievements.length,
+      achievements,
+    }
+
+    return setCacheValue(
+      playerAchievementCache,
+      cacheKey,
+      progress,
+      PLAYER_ACHIEVEMENT_CACHE_MS,
+    )
+  } catch {
+    return createUnsupportedAchievementProgress(appid)
+  }
+}
+
+function validateAuthenticatedSteamRequest(request, response) {
+  const steamid = getAuthenticatedSteamId(request)
+  const key = getSteamApiKey()
+
+  if (!steamid) {
+    sendJson(response, 401, { message: 'Steam login is required.' })
+    return null
+  }
+
+  if (!key) {
+    sendJson(response, 500, { message: 'STEAM_API_KEY is missing.' })
+    return null
+  }
+
+  return { key, steamid }
+}
+
+async function handleSteamProfile(request, response) {
+  const authentication = validateAuthenticatedSteamRequest(request, response)
+
+  if (!authentication) {
+    return
+  }
+
+  try {
+    const profile = await fetchSteamProfile(
+      authentication.key,
+      authentication.steamid,
+    )
+
+    if (!profile) {
+      sendJson(response, 404, { message: 'Steam profile was not found.' })
+      return
+    }
+
+    sendJson(response, 200, { profile })
+  } catch (error) {
+    sendJson(response, 502, {
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Could not fetch the Steam profile.',
+    })
+  }
+}
+
+async function handleSteamLibrary(request, response) {
+  const authentication = validateAuthenticatedSteamRequest(request, response)
+
+  if (!authentication) {
+    return
+  }
+
+  try {
+    const library = await fetchSteamLibraryData(
+      authentication.key,
+      authentication.steamid,
+    )
+
+    sendJson(response, 200, library)
+  } catch (error) {
+    sendJson(response, 502, {
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Could not fetch the Steam library.',
+    })
+  }
+}
+
+async function handlePlayerAchievements(request, requestUrl, response) {
+  const authentication = validateAuthenticatedSteamRequest(request, response)
+  const appid = requestUrl.searchParams.get('appid')
+
+  if (!authentication) {
+    return
+  }
+
+  if (!appid || !/^\d+$/.test(appid)) {
+    sendJson(response, 400, { message: 'A valid appid is required.' })
+    return
+  }
+
+  const progress = await fetchPlayerAchievementProgress(
+    authentication.key,
+    authentication.steamid,
+    Number(appid),
+  )
+
+  sendJson(response, 200, { progress })
+}
+
+async function handleAchievementOverview(request, requestUrl, response) {
+  const authentication = validateAuthenticatedSteamRequest(request, response)
+
+  if (!authentication) {
+    return
+  }
+
+  const requestedStart = Number(requestUrl.searchParams.get('start') ?? 0)
+  const start =
+    Number.isInteger(requestedStart) && requestedStart >= 0 ? requestedStart : 0
+
+  try {
+    const library = await fetchSteamLibraryData(
+      authentication.key,
+      authentication.steamid,
+    )
+    const eligibleGames = library.games
+      .filter((game) => game.has_community_visible_stats)
+      .sort(
+        (first, second) =>
+          Number(second.playtime_forever ?? 0) -
+          Number(first.playtime_forever ?? 0),
+      )
+    const pageGames = eligibleGames.slice(
+      start,
+      start + ACHIEVEMENT_OVERVIEW_PAGE_SIZE,
+    )
+    const games = await mapWithConcurrency(
+      pageGames,
+      ACHIEVEMENT_REQUEST_CONCURRENCY,
+      (game) =>
+        fetchPlayerAchievementProgress(
+          authentication.key,
+          authentication.steamid,
+          game.appid,
+        ),
+    )
+    const nextStart = start + pageGames.length
 
     sendJson(response, 200, {
-      gameCount: Number(data?.response?.game_count ?? games.length),
+      start,
+      count: games.length,
+      totalGames: eligibleGames.length,
+      nextStart:
+        nextStart < eligibleGames.length ? nextStart : null,
       games,
     })
   } catch (error) {
@@ -709,7 +1028,7 @@ async function handleSteamLibrary(request, response) {
       message:
         error instanceof Error
           ? error.message
-          : 'Could not fetch the Steam library.',
+          : 'Could not fetch the Steam achievement overview.',
     })
   }
 }
@@ -758,6 +1077,24 @@ export async function handleSteamProxyRequest(request, response) {
 
   if (request.method === 'GET' && requestUrl.pathname === '/api/steam/library') {
     return handleSteamLibrary(request, response)
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/steam/profile') {
+    return handleSteamProfile(request, response)
+  }
+
+  if (
+    request.method === 'GET' &&
+    requestUrl.pathname === '/api/steam/player-achievements'
+  ) {
+    return handlePlayerAchievements(request, requestUrl, response)
+  }
+
+  if (
+    request.method === 'GET' &&
+    requestUrl.pathname === '/api/steam/achievement-overview'
+  ) {
+    return handleAchievementOverview(request, requestUrl, response)
   }
 
   if (

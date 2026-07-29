@@ -3,8 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
+import { useSteamAchievementOverviewQuery } from '../hooks/useSteamPlayerAchievementsQuery'
 import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
-import type { SteamOwnedGame } from '../apis/steamApi'
+import { useSteamProfileQuery } from '../hooks/useSteamProfileQuery'
+import type {
+  SteamOwnedGame,
+  SteamPlayerAchievementProgress,
+} from '../apis/steamApi'
 import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 
@@ -47,14 +52,22 @@ function getSteamIconUrl(game: SteamOwnedGame) {
   return `https://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg`
 }
 
-function LibraryGameCard({ game }: { game: SteamOwnedGame }) {
+function LibraryGameCard({
+  game,
+  progress,
+}: {
+  game: SteamOwnedGame
+  progress?: SteamPlayerAchievementProgress
+}) {
   const { data: gameDetail } = useGameDetailQuery(game.appid)
   const [failedImageUrl, setFailedImageUrl] = useState('')
   const imageUrl = gameDetail?.image || getSteamIconUrl(game)
   const canShowImage = imageUrl && failedImageUrl !== imageUrl
 
   return (
-    <article className="steam-game-card">
+    <article
+      className={`steam-game-card${progress?.isPerfect ? ' is-perfect' : ''}`}
+    >
       <Link to={`/games/${game.appid}`}>
         {canShowImage ? (
           <img
@@ -76,6 +89,16 @@ function LibraryGameCard({ game }: { game: SteamOwnedGame }) {
         <div>
           <p>플레이 시간 {formatPlaytime(game.playtime_forever)}</p>
           <h3>{game.name}</h3>
+          {progress?.supported && progress.totalCount > 0 && (
+            <div className="library-achievement-progress">
+              <span>
+                도전과제 {progress.achievedCount} / {progress.totalCount}
+              </span>
+              {progress.isPerfect && (
+                <strong className="perfect-game-badge">100% 완료</strong>
+              )}
+            </div>
+          )}
         </div>
       </Link>
     </article>
@@ -114,6 +137,37 @@ export function MyPage() {
     isError,
     isLoading,
   } = useSteamLibraryQuery(user?.steamId)
+  const { data: profile } = useSteamProfileQuery(user?.steamId)
+  const {
+    data: achievementOverview,
+    hasNextPage: hasMoreAchievementPages,
+    isError: isAchievementOverviewError,
+    isFetchingNextPage: isAchievementOverviewFetching,
+    isLoading: isAchievementOverviewLoading,
+  } = useSteamAchievementOverviewQuery(user?.steamId)
+  const achievementProgress = useMemo(
+    () =>
+      achievementOverview?.pages.flatMap((page) => page.games) ?? [],
+    [achievementOverview?.pages],
+  )
+  const achievementProgressByAppId = useMemo(
+    () =>
+      new Map(
+        achievementProgress.map((progress) => [progress.appid, progress]),
+      ),
+    [achievementProgress],
+  )
+  const achievedCount = achievementProgress.reduce(
+    (total, progress) => total + progress.achievedCount,
+    0,
+  )
+  const perfectGameCount = achievementProgress.filter(
+    (progress) => progress.isPerfect,
+  ).length
+  const isAchievementOverviewComplete =
+    !isAchievementOverviewLoading &&
+    !isAchievementOverviewError &&
+    hasMoreAchievementPages === false
   const sortedGames = useMemo(
     () => sortLibraryGames(library?.games ?? [], sortOption),
     [library?.games, sortOption],
@@ -184,10 +238,34 @@ export function MyPage() {
   return (
     <main className="page">
       <section className="profile-panel">
-        <div>
-          <p className="eyebrow">My Steam Library</p>
-          <h1>마이페이지</h1>
-          <p className="muted">SteamID: {user.steamId}</p>
+        <div className="steam-profile-identity">
+          {profile?.avatarFull && (
+            <img
+              className="steam-profile-avatar"
+              src={profile.avatarFull}
+              alt={`${profile.personName} Steam 프로필 이미지`}
+            />
+          )}
+          <div>
+            <p className="eyebrow">My Steam Library</p>
+            <h1>마이페이지</h1>
+            {profile?.personName && (
+              <strong className="steam-profile-name">
+                {profile.personName}
+              </strong>
+            )}
+            <p className="muted">SteamID: {user.steamId}</p>
+            {profile?.profileUrl && (
+              <a
+                className="text-link steam-profile-link"
+                href={profile.profileUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Steam 프로필 보기
+              </a>
+            )}
+          </div>
         </div>
         <button
           className="secondary-button"
@@ -222,6 +300,31 @@ export function MyPage() {
             <article>
               <strong>{guideCount}</strong>
               <span>내가 작성한 공략</span>
+            </article>
+            <article>
+              <strong>
+                {isAchievementOverviewError
+                  ? '확인 불가'
+                  : `${achievedCount.toLocaleString()}${
+                      isAchievementOverviewComplete ? '' : '+'
+                    }`}
+              </strong>
+              <span>
+                달성 도전과제
+                {!isAchievementOverviewComplete &&
+                  !isAchievementOverviewError &&
+                  ' (집계 중)'}
+              </span>
+            </article>
+            <article>
+              <strong>
+                {isAchievementOverviewError
+                  ? '확인 불가'
+                  : `${perfectGameCount}${
+                      isAchievementOverviewComplete ? '' : '+'
+                    }`}
+              </strong>
+              <span>도전과제 100% 완료 게임</span>
             </article>
             <article>
               <strong>
@@ -266,9 +369,18 @@ export function MyPage() {
               </div>
               <section className="steam-game-grid">
                 {visibleGames.map((game) => (
-                  <LibraryGameCard game={game} key={game.appid} />
+                  <LibraryGameCard
+                    game={game}
+                    key={game.appid}
+                    progress={achievementProgressByAppId.get(game.appid)}
+                  />
                 ))}
               </section>
+              {isAchievementOverviewFetching && (
+                <p className="library-achievement-status" role="status">
+                  Steam 도전과제 달성 현황을 순차적으로 집계하고 있습니다.
+                </p>
+              )}
               {hasMoreGames && (
                 <div
                   className="library-scroll-sentinel"

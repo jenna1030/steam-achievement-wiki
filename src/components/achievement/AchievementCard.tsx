@@ -15,9 +15,21 @@ const difficultyLabel = {
 
 interface AchievementCardProps {
   achievement: Achievement
+  isUnlocked?: boolean
+  unlockTime?: number
 }
 
-export function AchievementCard({ achievement }: AchievementCardProps) {
+function formatUnlockDate(unlockTime: number) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    dateStyle: 'medium',
+  }).format(new Date(unlockTime * 1000))
+}
+
+export function AchievementCard({
+  achievement,
+  isUnlocked,
+  unlockTime,
+}: AchievementCardProps) {
   const navigate = useNavigate()
   const detailUrl = getAchievementPath(achievement.id)
   const displayTags = getAchievementTags(achievement)
@@ -28,7 +40,9 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
 
   return (
     <article
-      className="achievement-card clickable-card"
+      className={`achievement-card clickable-card${
+        isUnlocked ? ' is-unlocked' : ''
+      }`}
       role="link"
       tabIndex={0}
       onClick={openDetail}
@@ -47,6 +61,12 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
           loading="lazy"
         />
         <div>
+          {isUnlocked && (
+            <div className="achievement-unlocked-row">
+              <strong>달성 완료</strong>
+              {unlockTime ? <span>{formatUnlockDate(unlockTime)}</span> : null}
+            </div>
+          )}
           <p>{difficultyLabel[achievement.difficulty]}</p>
           <h3>{achievement.title}</h3>
           <p className="muted">{achievement.description}</p>
