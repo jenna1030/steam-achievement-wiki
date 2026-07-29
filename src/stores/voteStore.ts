@@ -39,6 +39,11 @@ export const useVoteStore = create<VoteState>((set) => {
     vote: (achievementId, option) =>
       set((state) => {
         const previousVote = state.userVotes[achievementId]
+
+        if (previousVote) {
+          return state
+        }
+
         const existingVote = state.votes.find(
           (voteItem) => voteItem.achievementId === achievementId,
         )
@@ -50,9 +55,6 @@ export const useVoteStore = create<VoteState>((set) => {
 
               return {
                 ...voteItem,
-                ...(previousVote
-                  ? { [previousVote]: Math.max(0, voteItem[previousVote] - 1) }
-                  : {}),
                 [option]: voteItem[option] + 1,
               }
             })

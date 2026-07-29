@@ -29,7 +29,14 @@ export function GuideForm({
 }: GuideFormProps) {
   const [gameSearchQuery, setGameSearchQuery] = useState('')
   const [achievementSearchQuery, setAchievementSearchQuery] = useState('')
-  const { handleSubmit, register, setValue, watch } = useForm<GuideFormValues>({
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    setValue,
+    watch,
+  } = useForm<GuideFormValues>({
+    mode: 'onBlur',
     defaultValues: {
       achievementId: defaultGuide?.achievementId ?? defaultAchievementId,
       title: defaultGuide?.title ?? '',
@@ -164,24 +171,36 @@ export function GuideForm({
       <label>
         공략 제목
         <input
+          aria-invalid={Boolean(errors.title)}
           type="text"
           placeholder="공략 제목을 입력하세요"
-          {...register('title', { required: true })}
+          {...register('title', { required: '공략 제목을 입력해주세요.' })}
         />
+        {errors.title && (
+          <span className="field-error">{errors.title.message}</span>
+        )}
       </label>
       <label>
         힌트
         <textarea
+          aria-invalid={Boolean(errors.hint)}
           placeholder="스포일러가 적은 힌트를 작성하세요"
-          {...register('hint', { required: true })}
+          {...register('hint', { required: '힌트를 입력해주세요.' })}
         />
+        {errors.hint && (
+          <span className="field-error">{errors.hint.message}</span>
+        )}
       </label>
       <label>
         자세한 공략
         <textarea
+          aria-invalid={Boolean(errors.detail)}
           placeholder="구체적인 진행 방법을 작성하세요"
-          {...register('detail', { required: true })}
+          {...register('detail', { required: '자세한 공략을 입력해주세요.' })}
         />
+        {errors.detail && (
+          <span className="field-error">{errors.detail.message}</span>
+        )}
       </label>
       <label className="checkbox-label form-checkbox">
         <input type="checkbox" {...register('hasSpoiler')} />
@@ -191,9 +210,18 @@ export function GuideForm({
         <label>
           스포일러 포함 공략
           <textarea
+            aria-invalid={Boolean(errors.spoiler)}
             placeholder="결말이나 조건을 포함해 작성하세요"
-            {...register('spoiler')}
+            {...register('spoiler', {
+              validate: (value, values) =>
+                !values.hasSpoiler ||
+                value.trim().length > 0 ||
+                '스포일러 포함 공략을 입력해주세요.',
+            })}
           />
+          {errors.spoiler && (
+            <span className="field-error">{errors.spoiler.message}</span>
+          )}
         </label>
       )}
       {!hasSpoiler && (
@@ -214,39 +242,78 @@ export function GuideForm({
         <label>
           예상 소요 시간
           <input
+            aria-invalid={Boolean(errors.estimatedMinutes)}
             min={1}
             type="number"
-            {...register('estimatedMinutes', { valueAsNumber: true })}
+            {...register('estimatedMinutes', {
+              min: {
+                value: 1,
+                message: '예상 소요 시간은 1분 이상이어야 합니다.',
+              },
+              required: '예상 소요 시간을 입력해주세요.',
+              valueAsNumber: true,
+            })}
           />
+          {errors.estimatedMinutes && (
+            <span className="field-error">
+              {errors.estimatedMinutes.message}
+            </span>
+          )}
         </label>
       </div>
       <label>
         달성 조건
         <textarea
+          aria-invalid={Boolean(errors.conditionsText)}
           placeholder="한 줄에 하나씩 작성하세요"
-          {...register('conditionsText')}
+          {...register('conditionsText', {
+            required: '달성 조건을 입력해주세요.',
+          })}
         />
+        {errors.conditionsText && (
+          <span className="field-error">{errors.conditionsText.message}</span>
+        )}
       </label>
       <label>
         필요한 준비물
         <textarea
+          aria-invalid={Boolean(errors.suppliesText)}
           placeholder="한 줄에 하나씩 작성하세요"
-          {...register('suppliesText')}
+          {...register('suppliesText', {
+            required: '필요한 준비물을 입력해주세요.',
+          })}
         />
+        {errors.suppliesText && (
+          <span className="field-error">{errors.suppliesText.message}</span>
+        )}
       </label>
       <label>
         주의할 점
         <textarea
+          aria-invalid={Boolean(errors.warningsText)}
           placeholder="한 줄에 하나씩 작성하세요"
-          {...register('warningsText')}
+          {...register('warningsText', {
+            required: '주의할 점을 입력해주세요.',
+          })}
         />
+        {errors.warningsText && (
+          <span className="field-error">{errors.warningsText.message}</span>
+        )}
       </label>
       <label>
         추천 진행 순서
         <textarea
+          aria-invalid={Boolean(errors.recommendedOrderText)}
           placeholder="한 줄에 하나씩 작성하세요"
-          {...register('recommendedOrderText')}
+          {...register('recommendedOrderText', {
+            required: '추천 진행 순서를 입력해주세요.',
+          })}
         />
+        {errors.recommendedOrderText && (
+          <span className="field-error">
+            {errors.recommendedOrderText.message}
+          </span>
+        )}
       </label>
       <button type="submit">
         {defaultGuide ? '공략 수정하기' : '공략 저장하기'}

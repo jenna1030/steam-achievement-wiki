@@ -28,6 +28,12 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
+        <div className="topbar-actions">
+          <button className="login-button" type="button">
+            로그인하기
+          </button>
+          <span>제작 이지현</span>
+        </div>
       </header>
       <Outlet />
     </div>
