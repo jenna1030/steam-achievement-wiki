@@ -13,6 +13,7 @@ import type {
 } from '../apis/steamApi'
 import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
+import { isGuideOwnedBy } from '../utils/guideOwnership'
 
 const PAGE_SIZE = 20
 type LibrarySortOption = 'playtime-desc' | 'recent-desc' | 'name-asc'
@@ -128,7 +129,12 @@ export function MyPage() {
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const logout = useAuthStore((state) => state.logout)
-  const guideCount = useGuideStore((state) => state.userGuides.length)
+  const guideCount = useGuideStore(
+    (state) =>
+      state.userGuides.filter((guide) =>
+        isGuideOwnedBy(guide, user?.steamId),
+      ).length,
+  )
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [sortOption, setSortOption] =
     useState<LibrarySortOption>('playtime-desc')

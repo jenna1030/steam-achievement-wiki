@@ -12,6 +12,7 @@ import {
 } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useSteamAppsQuery } from '../hooks/useSteamAppsQuery'
+import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 import type { Achievement } from '../types/achievement'
 import type { GuideFormValues } from '../types/guide'
@@ -21,6 +22,7 @@ import {
   matchesAchievementId,
   normalizeAchievementId,
 } from '../utils/achievementIdentity'
+import { isGuideOwnedBy } from '../utils/guideOwnership'
 
 interface GuideEditorLocationState {
   achievement?: Achievement
@@ -34,8 +36,14 @@ export function GuideEditorPage() {
   const achievementId = normalizeAchievementId(
     searchParams.get('achievementId') ?? '',
   )
+  const user = useAuthStore((state) => state.user)
+  const ownerSteamId = user?.steamId ?? null
   const userGuides = useGuideStore((state) => state.userGuides)
-  const editingGuide = userGuides.find((guide) => guide.id === guideId)
+  const editingGuide = userGuides.find(
+    (guide) =>
+      guide.id === guideId &&
+      isGuideOwnedBy(guide, user?.steamId),
+  )
   const defaultAchievementId = editingGuide?.achievementId ?? achievementId
   const [selectedGameId, setSelectedGameId] = useState(
     getGameIdFromAchievementId(defaultAchievementId) ?? 0,
@@ -129,14 +137,14 @@ export function GuideEditorPage() {
     )
 
     if (editingGuide) {
-      updateGuide(editingGuide.id, values)
+      updateGuide(editingGuide.id, values, ownerSteamId)
       navigate(getAchievementPath(values.achievementId), {
         state: { achievement: selectedAchievement },
       })
       return
     }
 
-    const guide = addGuide(values)
+    const guide = addGuide(values, ownerSteamId)
     navigate(getAchievementPath(guide.achievementId), {
       state: { achievement: selectedAchievement },
     })

@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchSteamAchievements } from '../apis/steamApi'
 import type { AchievementId } from '../types/achievement'
-import type { AchievementGuide } from '../types/guide'
 import {
   getGameIdFromAchievementId,
   matchesAchievementId,
@@ -39,13 +38,5 @@ export function useAchievementDetailQuery(achievementId: AchievementId) {
     },
     enabled: gameId !== null,
     staleTime: 1000 * 60 * 30,
-  })
-}
-
-export function useAchievementGuidesQuery(achievementId: AchievementId) {
-  return useQuery({
-    queryKey: ['guides', 'achievement', achievementId],
-    queryFn: async (): Promise<AchievementGuide[]> => [],
-    enabled: achievementId.length > 0,
   })
 }

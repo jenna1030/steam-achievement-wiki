@@ -1,12 +1,43 @@
 import { Link } from 'react-router-dom'
+import { LoadingState } from '../components/common/LoadingState'
+import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 import {
   getAchievementPath,
   getGameIdFromAchievementId,
 } from '../utils/achievementIdentity'
+import { getGuidesForOwner } from '../utils/guideOwnership'
 
 export function MyGuidesPage() {
-  const userGuides = useGuideStore((state) => state.userGuides)
+  const user = useAuthStore((state) => state.user)
+  const authStatus = useAuthStore((state) => state.status)
+  const userGuides = useGuideStore((state) =>
+    getGuidesForOwner(state.userGuides, user?.steamId),
+  )
+
+  if (authStatus !== 'ready') {
+    return (
+      <main className="page">
+        <LoadingState message="Steam 로그인 상태를 확인하는 중입니다." />
+      </main>
+    )
+  }
+
+  if (!user) {
+    return (
+      <main className="page">
+        <section className="empty-state">
+          <h1>로그인이 필요합니다.</h1>
+          <p className="muted">
+            Steam 계정으로 로그인하면 계정별로 저장된 공략을 확인할 수 있습니다.
+          </p>
+          <Link className="button-link" to="/login">
+            로그인하러 가기
+          </Link>
+        </section>
+      </main>
+    )
+  }
 
   return (
     <main className="page">

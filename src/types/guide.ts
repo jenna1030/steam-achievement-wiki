@@ -8,6 +8,7 @@ export type SpoilerLevel = 'hint' | 'detail' | 'spoiler'
 export interface AchievementGuide {
   id: number
   achievementId: AchievementId
+  ownerSteamId: string | null
   source?: 'local' | 'user'
   title: string
   author: string

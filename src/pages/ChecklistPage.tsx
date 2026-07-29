@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useChecklistStore } from '../stores/checklistStore'
+import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 import type { ChecklistStatus } from '../types/checklist'
 import type { SpoilerLevel } from '../types/guide'
@@ -8,6 +9,7 @@ import {
   getAchievementPath,
   getGameIdFromAchievementId,
 } from '../utils/achievementIdentity'
+import { isGuideOwnedBy } from '../utils/guideOwnership'
 
 const statusOptions: Array<{ value: ChecklistStatus; label: string }> = [
   { value: 'saved', label: '저장됨' },
@@ -21,6 +23,7 @@ export function ChecklistPage() {
     level: Extract<SpoilerLevel, 'hint' | 'detail'>
   } | null>(null)
   const items = useChecklistStore((state) => state.items)
+  const user = useAuthStore((state) => state.user)
   const userGuides = useGuideStore((state) => state.userGuides)
   const updateStatus = useChecklistStore((state) => state.updateStatus)
   const updateMemo = useChecklistStore((state) => state.updateMemo)
@@ -60,7 +63,8 @@ export function ChecklistPage() {
               item.gameId ?? getGameIdFromAchievementId(item.achievementId)
             const guide = userGuides.find(
               (targetGuide) =>
-                targetGuide.achievementId === item.achievementId,
+                targetGuide.achievementId === item.achievementId &&
+                isGuideOwnedBy(targetGuide, user?.steamId),
             )
             const selectedGuideLevel =
               expandedGuide?.achievementId === item.achievementId

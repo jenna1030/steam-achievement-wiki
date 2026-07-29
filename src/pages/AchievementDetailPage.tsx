@@ -7,11 +7,9 @@ import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { SpoilerGuideTabs } from '../components/guide/SpoilerGuideTabs'
 import { DifficultyVote } from '../components/vote/DifficultyVote'
-import {
-  useAchievementDetailQuery,
-  useAchievementGuidesQuery,
-} from '../hooks/useAchievementsQuery'
+import { useAchievementDetailQuery } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
+import { useAuthStore } from '../stores/authStore'
 import { useChecklistStore } from '../stores/checklistStore'
 import { useGuideStore } from '../stores/guideStore'
 import { useVoteStore } from '../stores/voteStore'
@@ -21,6 +19,7 @@ import {
   matchesAchievementId,
   normalizeAchievementId,
 } from '../utils/achievementIdentity'
+import { isGuideOwnedBy } from '../utils/guideOwnership'
 import {
   applyGuideMetadata,
   getAchievementNotices,
@@ -42,6 +41,8 @@ export function AchievementDetailPage() {
       ? stateAchievement
       : undefined
   const inferredGameId = getGameIdFromAchievementId(achievementIdValue)
+  const user = useAuthStore((state) => state.user)
+  const ownerSteamId = user?.steamId ?? null
 
   const {
     data: queriedAchievement,
@@ -54,11 +55,6 @@ export function AchievementDetailPage() {
     data: game,
     isLoading: isGameLoading,
   } = useGameDetailQuery(lookupGameId ?? Number.NaN)
-  const {
-    data: relatedGuides = [],
-    isLoading: isGuidesLoading,
-  } = useAchievementGuidesQuery(achievementIdValue)
-
   const rawAchievement = queriedAchievement ?? matchingStateAchievement
   const userGuides = useGuideStore((state) => state.userGuides)
   const deleteGuide = useGuideStore((state) => state.deleteGuide)
@@ -78,11 +74,12 @@ export function AchievementDetailPage() {
       rawAchievement
         ? userGuides.filter(
             (guide) =>
-              guide.achievementId === rawAchievement.id ||
-              guide.achievementId === legacyAchievementId,
+              isGuideOwnedBy(guide, user?.steamId) &&
+              (guide.achievementId === rawAchievement.id ||
+                guide.achievementId === legacyAchievementId),
           )
         : [],
-    [legacyAchievementId, rawAchievement, userGuides],
+    [legacyAchievementId, rawAchievement, user?.steamId, userGuides],
   )
   const achievement = useMemo(
     () =>
@@ -93,10 +90,6 @@ export function AchievementDetailPage() {
   )
   const displayTags = achievement ? getAchievementTags(achievement) : []
   const noticeLabels = achievement ? getAchievementNotices(achievement) : []
-  const combinedGuides = [
-    ...localGuides,
-    ...relatedGuides,
-  ]
   const isResolvingSteamAchievement =
     !achievement &&
     inferredGameId !== null &&
@@ -227,18 +220,14 @@ export function AchievementDetailPage() {
             나누어 보여줍니다.
           </p>
         </div>
-        {isGuidesLoading && <LoadingState message="공략을 불러오는 중입니다." />}
-        {!isGuidesLoading &&
-          combinedGuides.map((guide) => (
-            <SpoilerGuideTabs
-              guide={guide}
-              key={`${guide.source ?? 'local'}-${guide.id}`}
-              onDelete={
-                guide.source === 'user' ? () => deleteGuide(guide.id) : undefined
-              }
-            />
-          ))}
-        {!isGuidesLoading && combinedGuides.length === 0 && (
+        {localGuides.map((guide) => (
+          <SpoilerGuideTabs
+            guide={guide}
+            key={guide.id}
+            onDelete={() => deleteGuide(guide.id, ownerSteamId)}
+          />
+        ))}
+        {localGuides.length === 0 && (
           <div className="empty-state">
             <h3>등록된 공략이 없습니다.</h3>
             <p className="muted">

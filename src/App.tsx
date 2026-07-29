@@ -4,6 +4,7 @@ import './App.css'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoadingState } from './components/common/LoadingState'
 import { useAuthStore } from './stores/authStore'
+import { useGuideStore } from './stores/guideStore'
 
 const AchievementDetailPage = lazy(() =>
   import('./pages/AchievementDetailPage').then((module) => ({
@@ -58,10 +59,15 @@ const NotFoundPage = lazy(() =>
 
 function App() {
   const hydrateAuth = useAuthStore((state) => state.hydrate)
+  const claimLegacyGuides = useGuideStore((state) => state.claimLegacyGuides)
 
   useEffect(() => {
-    void hydrateAuth()
-  }, [hydrateAuth])
+    void hydrateAuth().then((user) => {
+      if (user) {
+        claimLegacyGuides(user.steamId)
+      }
+    })
+  }, [claimLegacyGuides, hydrateAuth])
 
   return (
     <Suspense

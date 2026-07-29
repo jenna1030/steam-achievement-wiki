@@ -17,6 +17,7 @@ import {
   sortAchievements,
 } from '../utils/achievementFilters'
 import { applyGuideMetadata } from '../utils/achievementMetadata'
+import { isGuideOwnedBy } from '../utils/guideOwnership'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
@@ -58,13 +59,14 @@ export function GameDetailPage() {
         const legacyId = String(achievement.legacyId ?? '')
         const guide = userGuides.find(
           (item) =>
-            item.achievementId === achievement.id ||
-            item.achievementId === legacyId,
+            isGuideOwnedBy(item, user?.steamId) &&
+            (item.achievementId === achievement.id ||
+              item.achievementId === legacyId),
         )
 
         return applyGuideMetadata(achievement, guide)
       }),
-    [steamAchievements, userGuides],
+    [steamAchievements, user?.steamId, userGuides],
   )
   const achievementTags = useMemo(
     () => getAchievementFilterTags(achievements),

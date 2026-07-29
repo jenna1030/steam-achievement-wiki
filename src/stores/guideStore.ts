@@ -7,9 +7,17 @@ const STORAGE_KEY = 'steam-achievement-wiki-guides'
 
 interface GuideState {
   userGuides: AchievementGuide[]
-  addGuide: (values: GuideFormValues) => AchievementGuide
-  updateGuide: (guideId: number, values: GuideFormValues) => void
-  deleteGuide: (guideId: number) => void
+  addGuide: (
+    values: GuideFormValues,
+    ownerSteamId: string | null,
+  ) => AchievementGuide
+  updateGuide: (
+    guideId: number,
+    values: GuideFormValues,
+    ownerSteamId: string | null,
+  ) => void
+  deleteGuide: (guideId: number, ownerSteamId: string | null) => void
+  claimLegacyGuides: (ownerSteamId: string) => void
   migrateAchievementId: (
     legacyId: AchievementId,
     achievementId: AchievementId,
@@ -27,6 +35,8 @@ function normalizeStoredGuide(guide: AchievementGuide): AchievementGuide {
   return {
     ...guide,
     achievementId: normalizeAchievementId(guide.achievementId),
+    ownerSteamId:
+      typeof guide.ownerSteamId === 'string' ? guide.ownerSteamId : null,
     tags: Array.isArray(guide.tags) ? guide.tags : [],
     dlcRequirement: guide.dlcRequirement ?? 'unknown',
     multiplayerRequirement: guide.multiplayerRequirement ?? 'unknown',
@@ -57,6 +67,7 @@ function persistGuides(guides: AchievementGuide[]) {
 
 function createGuideFromValues(
   values: GuideFormValues,
+  ownerSteamId: string | null,
   guideId = Date.now(),
 ): AchievementGuide {
   const now = new Date().toISOString().slice(0, 10)
@@ -64,6 +75,7 @@ function createGuideFromValues(
   return {
     id: guideId,
     achievementId: normalizeAchievementId(values.achievementId),
+    ownerSteamId,
     source: 'user',
     title: values.title,
     author: '나',
@@ -90,8 +102,8 @@ function createGuideFromValues(
 
 export const useGuideStore = create<GuideState>((set) => ({
   userGuides: loadStoredGuides(),
-  addGuide: (values) => {
-    const guide = createGuideFromValues(values)
+  addGuide: (values, ownerSteamId) => {
+    const guide = createGuideFromValues(values, ownerSteamId)
 
     set((state) => {
       const userGuides = [guide, ...state.userGuides]
@@ -102,15 +114,18 @@ export const useGuideStore = create<GuideState>((set) => ({
 
     return guide
   },
-  updateGuide: (guideId, values) =>
+  updateGuide: (guideId, values, ownerSteamId) =>
     set((state) => {
       const userGuides = state.userGuides.map((guide) => {
-        if (guide.id !== guideId) {
+        if (
+          guide.id !== guideId ||
+          guide.ownerSteamId !== ownerSteamId
+        ) {
           return guide
         }
 
         return {
-          ...createGuideFromValues(values, guideId),
+          ...createGuideFromValues(values, ownerSteamId, guideId),
           createdAt: guide.createdAt,
           updatedAt: new Date().toISOString().slice(0, 10),
         }
@@ -120,9 +135,29 @@ export const useGuideStore = create<GuideState>((set) => ({
 
       return { userGuides }
     }),
-  deleteGuide: (guideId) =>
+  deleteGuide: (guideId, ownerSteamId) =>
     set((state) => {
-      const userGuides = state.userGuides.filter((guide) => guide.id !== guideId)
+      const userGuides = state.userGuides.filter(
+        (guide) =>
+          guide.id !== guideId ||
+          guide.ownerSteamId !== ownerSteamId,
+      )
+      persistGuides(userGuides)
+
+      return { userGuides }
+    }),
+  claimLegacyGuides: (ownerSteamId) =>
+    set((state) => {
+      if (!state.userGuides.some((guide) => guide.ownerSteamId === null)) {
+        return state
+      }
+
+      const userGuides = state.userGuides.map((guide) =>
+        guide.ownerSteamId === null
+          ? { ...guide, ownerSteamId }
+          : guide,
+      )
+
       persistGuides(userGuides)
 
       return { userGuides }
