@@ -7,6 +7,24 @@ import type { GameSearchFilters } from '../types/search'
 import { matchesAchievementCountFilter } from '../utils/gameSearchFilters'
 import { mergeUniqueSteamStoreGames } from '../utils/storeGamePagination'
 
+function GameSearchSkeletonCards({ count }: { count: number }) {
+  return Array.from({ length: count }).map((_, index) => (
+    <article
+      aria-hidden="true"
+      className="steam-game-card skeleton-card game-search-skeleton-card"
+      key={`game-search-skeleton-${index}`}
+    >
+      <div className="skeleton-image" />
+      <div className="game-search-skeleton-content">
+        <div className="skeleton-line skeleton-line-short" />
+        <div className="skeleton-line" />
+        <div className="skeleton-line skeleton-line-short" />
+      </div>
+      <div className="skeleton-button" />
+    </article>
+  ))
+}
+
 function GameSearchSkeleton({
   count,
   label,
@@ -20,21 +38,7 @@ function GameSearchSkeleton({
       className="steam-game-grid game-search-skeleton-grid"
       role="status"
     >
-      {Array.from({ length: count }).map((_, index) => (
-        <article
-          aria-hidden="true"
-          className="steam-game-card skeleton-card game-search-skeleton-card"
-          key={index}
-        >
-          <div className="skeleton-image" />
-          <div className="game-search-skeleton-content">
-            <div className="skeleton-line skeleton-line-short" />
-            <div className="skeleton-line" />
-            <div className="skeleton-line skeleton-line-short" />
-          </div>
-          <div className="skeleton-button" />
-        </article>
-      ))}
+      <GameSearchSkeletonCards count={count} />
     </div>
   )
 }
@@ -167,6 +171,7 @@ export function GameSearchPage() {
           {isFiltering
             ? ` · 현재 불러온 목록 중 ${games.length}개 조건 일치`
             : ''}
+          {isFetchingNextPage ? ' · 추가 게임 불러오는 중' : ''}
         </span>
         {isLoading && (
           <GameSearchSkeleton
@@ -181,7 +186,7 @@ export function GameSearchPage() {
               : 'Steam Store 목록을 불러오지 못했습니다. API 서버 실행 상태를 확인해주세요.'}
           </p>
         )}
-        {games.length > 0 && (
+        {(games.length > 0 || isFetchingNextPage) && (
           <div className="steam-game-grid">
             {games.map((game) => {
               const isFavorite = favoriteGameIds.includes(game.appid)
@@ -230,17 +235,13 @@ export function GameSearchPage() {
                 </article>
               )
             })}
+            {isFetchingNextPage && <GameSearchSkeletonCards count={3} />}
           </div>
         )}
-        {isFetchingNextPage && (
-          <GameSearchSkeleton
-            count={3}
-            label="Steam Store 게임을 추가로 불러오는 중입니다."
-          />
-        )}
-        {!isLoading && games.length === 0 && !isError && (
-          <p className="muted">Steam Store 결과가 없습니다.</p>
-        )}
+        {!isLoading &&
+          !isFetchingNextPage &&
+          games.length === 0 &&
+          !isError && <p className="muted">Steam Store 결과가 없습니다.</p>}
         {hasNextPage && !isFetchingNextPage && (
           <button
             className="load-more-button"
