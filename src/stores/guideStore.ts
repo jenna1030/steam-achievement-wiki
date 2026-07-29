@@ -2,8 +2,14 @@ import { create } from 'zustand'
 import type { AchievementId } from '../types/achievement'
 import type { AchievementGuide, GuideFormValues } from '../types/guide'
 import { normalizeAchievementId } from '../utils/achievementIdentity'
+import { parseGuideStorage } from '../utils/localStorageSchemas'
+import {
+  readVersionedStorage,
+  writeVersionedStorage,
+} from '../utils/versionedStorage'
 
 const STORAGE_KEY = 'steam-achievement-wiki-guides'
+const STORAGE_VERSION = 1
 
 interface GuideState {
   userGuides: AchievementGuide[]
@@ -31,38 +37,23 @@ function parseLines(value: string) {
     .filter(Boolean)
 }
 
-function normalizeStoredGuide(guide: AchievementGuide): AchievementGuide {
-  return {
-    ...guide,
-    achievementId: normalizeAchievementId(guide.achievementId),
-    ownerSteamId:
-      typeof guide.ownerSteamId === 'string' ? guide.ownerSteamId : null,
-    tags: Array.isArray(guide.tags) ? guide.tags : [],
-    dlcRequirement: guide.dlcRequirement ?? 'unknown',
-    multiplayerRequirement: guide.multiplayerRequirement ?? 'unknown',
-    isMissable: guide.isMissable ?? false,
-    requiresSecondRun: guide.requiresSecondRun ?? false,
-  }
-}
-
 function loadStoredGuides(): AchievementGuide[] {
-  try {
-    const rawGuides = window.localStorage.getItem(STORAGE_KEY)
-
-    if (!rawGuides) {
-      return []
-    }
-
-    const guides = JSON.parse(rawGuides) as AchievementGuide[]
-
-    return Array.isArray(guides) ? guides.map(normalizeStoredGuide) : []
-  } catch {
-    return []
-  }
+  return readVersionedStorage({
+    storage: window.localStorage,
+    key: STORAGE_KEY,
+    version: STORAGE_VERSION,
+    fallback: [],
+    parse: parseGuideStorage,
+  })
 }
 
 function persistGuides(guides: AchievementGuide[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(guides))
+  writeVersionedStorage(
+    window.localStorage,
+    STORAGE_KEY,
+    STORAGE_VERSION,
+    guides,
+  )
 }
 
 function createGuideFromValues(

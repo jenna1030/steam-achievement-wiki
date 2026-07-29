@@ -1,11 +1,17 @@
 import { create } from 'zustand'
 import type { AchievementId } from '../types/achievement'
 import type { DifficultyVote } from '../types/checklist'
-import { normalizeAchievementId } from '../utils/achievementIdentity'
-
-type VoteOption = 'easy' | 'normal' | 'hard' | 'veryHard'
+import {
+  parseVoteStorage,
+  type VoteOption,
+} from '../utils/localStorageSchemas'
+import {
+  readVersionedStorage,
+  writeVersionedStorage,
+} from '../utils/versionedStorage'
 
 const STORAGE_KEY = 'steam-achievement-wiki-votes'
+const STORAGE_VERSION = 1
 
 interface VoteState {
   votes: DifficultyVote[]
@@ -19,35 +25,25 @@ interface VoteState {
 }
 
 function loadStoredState(): Pick<VoteState, 'votes' | 'userVotes'> {
-  try {
-    const rawState = window.localStorage.getItem(STORAGE_KEY)
-
-    if (!rawState) {
-      return { votes: [], userVotes: {} }
-    }
-
-    const storedState = JSON.parse(rawState) as Pick<
-      VoteState,
-      'votes' | 'userVotes'
-    >
-    const votes = Array.isArray(storedState.votes)
-      ? storedState.votes.map((vote) => ({
-          ...vote,
-          achievementId: normalizeAchievementId(vote.achievementId),
-        }))
-      : []
-
-    return { votes, userVotes: storedState.userVotes ?? {} }
-  } catch {
-    return { votes: [], userVotes: {} }
-  }
+  return readVersionedStorage({
+    storage: window.localStorage,
+    key: STORAGE_KEY,
+    version: STORAGE_VERSION,
+    fallback: { votes: [], userVotes: {} },
+    parse: parseVoteStorage,
+  })
 }
 
 function persistState(
   votes: DifficultyVote[],
   userVotes: Record<AchievementId, VoteOption>,
 ) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ votes, userVotes }))
+  writeVersionedStorage(
+    window.localStorage,
+    STORAGE_KEY,
+    STORAGE_VERSION,
+    { votes, userVotes },
+  )
 }
 
 function changeVoteCount(

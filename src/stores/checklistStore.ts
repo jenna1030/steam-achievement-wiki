@@ -5,9 +5,14 @@ import {
   getAchievementNotices,
   getAchievementTags,
 } from '../utils/achievementMetadata'
-import { normalizeAchievementId } from '../utils/achievementIdentity'
+import { parseChecklistStorage } from '../utils/localStorageSchemas'
+import {
+  readVersionedStorage,
+  writeVersionedStorage,
+} from '../utils/versionedStorage'
 
 const STORAGE_KEY = 'steam-achievement-wiki-checklist'
+const STORAGE_VERSION = 1
 
 interface ChecklistState {
   items: ChecklistItem[]
@@ -21,31 +26,23 @@ function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function normalizeStoredItem(item: ChecklistItem): ChecklistItem {
-  return {
-    ...item,
-    achievementId: normalizeAchievementId(item.achievementId),
-  }
-}
-
 function loadStoredItems(): ChecklistItem[] {
-  try {
-    const rawItems = window.localStorage.getItem(STORAGE_KEY)
-
-    if (!rawItems) {
-      return []
-    }
-
-    const items = JSON.parse(rawItems) as ChecklistItem[]
-
-    return Array.isArray(items) ? items.map(normalizeStoredItem) : []
-  } catch {
-    return []
-  }
+  return readVersionedStorage({
+    storage: window.localStorage,
+    key: STORAGE_KEY,
+    version: STORAGE_VERSION,
+    fallback: [],
+    parse: parseChecklistStorage,
+  })
 }
 
 function persistItems(items: ChecklistItem[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+  writeVersionedStorage(
+    window.localStorage,
+    STORAGE_KEY,
+    STORAGE_VERSION,
+    items,
+  )
 }
 
 export const useChecklistStore = create<ChecklistState>((set) => ({

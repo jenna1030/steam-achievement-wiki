@@ -1,4 +1,12 @@
 import { create } from 'zustand'
+import {
+  parseLibraryStorage,
+  type LibraryStorageData,
+} from '../utils/localStorageSchemas'
+import {
+  readVersionedStorage,
+  writeVersionedStorage,
+} from '../utils/versionedStorage'
 
 interface LibraryState {
   favoriteGameIds: number[]
@@ -8,31 +16,27 @@ interface LibraryState {
 }
 
 const STORAGE_KEY = 'steam-achievement-wiki-library'
+const STORAGE_VERSION = 1
 
-function loadStoredLibrary() {
-  try {
-    const rawLibrary = window.localStorage.getItem(STORAGE_KEY)
-
-    if (!rawLibrary) {
-      return { favoriteGameIds: [], recentSearches: [] }
-    }
-
-    return JSON.parse(rawLibrary) as Pick<
-      LibraryState,
-      'favoriteGameIds' | 'recentSearches'
-    >
-  } catch {
-    return { favoriteGameIds: [], recentSearches: [] }
-  }
+function loadStoredLibrary(): LibraryStorageData {
+  return readVersionedStorage({
+    storage: window.localStorage,
+    key: STORAGE_KEY,
+    version: STORAGE_VERSION,
+    fallback: { favoriteGameIds: [], recentSearches: [] },
+    parse: parseLibraryStorage,
+  })
 }
 
 function persistLibrary(
   favoriteGameIds: number[],
   recentSearches: string[],
 ) {
-  window.localStorage.setItem(
+  writeVersionedStorage(
+    window.localStorage,
     STORAGE_KEY,
-    JSON.stringify({ favoriteGameIds, recentSearches }),
+    STORAGE_VERSION,
+    { favoriteGameIds, recentSearches },
   )
 }
 
