@@ -1,4 +1,5 @@
 import type { Achievement } from '../../types/achievement'
+import { formatEstimatedTimeRange } from '../../utils/estimatedTime'
 
 const difficultyLabel = {
   easy: '쉬움',
@@ -30,9 +31,7 @@ export function AchievementMetaPanel({
         </article>
         <article>
           <strong>
-            {achievement.estimatedMinutes > 0
-              ? `${achievement.estimatedMinutes}분`
-              : '정보 없음'}
+            {formatEstimatedTimeRange(achievement.estimatedMinutes)}
           </strong>
           <span>예상 소요 시간</span>
         </article>

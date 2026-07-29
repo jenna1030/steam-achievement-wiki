@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { Achievement, AchievementId } from '../../types/achievement'
 import type { AchievementGuide, GuideFormValues } from '../../types/guide'
+import {
+  estimatedTimeOptions,
+  normalizeEstimatedTimeRange,
+} from '../../utils/estimatedTime'
 
 export interface GuideGameOption {
   id: number
@@ -56,7 +60,9 @@ export function GuideForm({
       hasSpoiler: defaultGuide?.hasSpoiler ?? false,
       spoiler: defaultGuide?.spoiler ?? '',
       difficulty: defaultGuide?.difficulty ?? '보통',
-      estimatedMinutes: defaultGuide?.estimatedMinutes ?? 30,
+      estimatedMinutes: normalizeEstimatedTimeRange(
+        defaultGuide?.estimatedMinutes ?? 30,
+      ),
       conditionsText: defaultGuide ? joinLines(defaultGuide.conditions) : '',
       suppliesText: defaultGuide ? joinLines(defaultGuide.supplies) : '',
       warningsText: defaultGuide ? joinLines(defaultGuide.warnings) : '',
@@ -317,24 +323,24 @@ export function GuideForm({
         </label>
         <label>
           예상 소요 시간
-          <input
+          <select
             aria-describedby={
               errors.estimatedMinutes
                 ? 'guide-estimated-minutes-error'
                 : undefined
             }
             aria-invalid={Boolean(errors.estimatedMinutes)}
-            min={1}
-            type="number"
             {...register('estimatedMinutes', {
-              min: {
-                value: 1,
-                message: '예상 소요 시간은 1분 이상이어야 합니다.',
-              },
-              required: '예상 소요 시간을 입력해주세요.',
+              required: '예상 소요 시간을 선택해주세요.',
               valueAsNumber: true,
             })}
-          />
+          >
+            {estimatedTimeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           {errors.estimatedMinutes && (
             <span
               className="field-error"

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { AchievementId } from '../types/achievement'
 import type { AchievementGuide, GuideFormValues } from '../types/guide'
 import { normalizeAchievementId } from '../utils/achievementIdentity'
+import { normalizeEstimatedTimeRange } from '../utils/estimatedTime'
 import { parseGuideStorage } from '../utils/localStorageSchemas'
 import {
   readVersionedStorage,
@@ -84,7 +85,9 @@ function createGuideFromValues(
     isMissable: values.isMissable,
     requiresSecondRun: values.requiresSecondRun,
     difficulty: values.difficulty,
-    estimatedMinutes: Number(values.estimatedMinutes),
+    estimatedMinutes: normalizeEstimatedTimeRange(
+      Number(values.estimatedMinutes),
+    ),
     likeCount: 0,
     dislikeCount: 0,
     createdAt: now,

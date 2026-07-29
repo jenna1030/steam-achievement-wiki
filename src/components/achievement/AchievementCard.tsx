@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import type { Achievement } from '../../types/achievement'
+import { formatEstimatedTimeRange } from '../../utils/estimatedTime'
 import { getAchievementPath } from '../../utils/achievementIdentity'
 import {
   getAchievementNotices,
@@ -91,11 +92,7 @@ export function AchievementCard({
         </div>
         <div>
           <dt>예상 시간</dt>
-          <dd>
-            {achievement.estimatedMinutes > 0
-              ? `${achievement.estimatedMinutes}분`
-              : '정보 없음'}
-          </dd>
+          <dd>{formatEstimatedTimeRange(achievement.estimatedMinutes)}</dd>
         </div>
       </dl>
       <div className="inline-actions">

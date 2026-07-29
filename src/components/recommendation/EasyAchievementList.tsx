@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { RecommendedAchievementView } from '../../utils/recommendAchievements'
 import { getAchievementPath } from '../../utils/achievementIdentity'
+import { formatEstimatedTimeRange } from '../../utils/estimatedTime'
 
 interface EasyAchievementListProps {
   recommendations: RecommendedAchievementView[]
@@ -25,11 +26,7 @@ export function EasyAchievementList({
             </div>
             <div>
               <dt>예상 시간</dt>
-              <dd>
-                {achievement.estimatedMinutes > 0
-                  ? `${achievement.estimatedMinutes}분`
-                  : '정보 없음'}
-              </dd>
+              <dd>{formatEstimatedTimeRange(achievement.estimatedMinutes)}</dd>
             </div>
           </dl>
           <Link

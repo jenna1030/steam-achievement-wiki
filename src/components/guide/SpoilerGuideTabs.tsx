@@ -6,6 +6,7 @@ import {
   type GuideReaction,
 } from '../../stores/guideFeedbackStore'
 import type { AchievementGuide, SpoilerLevel } from '../../types/guide'
+import { formatEstimatedTimeRange } from '../../utils/estimatedTime'
 import { getGuideFeedbackKey } from '../../utils/guideFeedback'
 
 const spoilerOptions: Array<{
@@ -145,7 +146,7 @@ export function SpoilerGuideTabs({
           </div>
           <div>
             <dt>예상 시간</dt>
-            <dd>{guide.estimatedMinutes}분</dd>
+            <dd>{formatEstimatedTimeRange(guide.estimatedMinutes)}</dd>
           </div>
         </dl>
       </div>
