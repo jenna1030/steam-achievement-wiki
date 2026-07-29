@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { difficultyVotes } from '../mocks/checklist'
 import type { DifficultyVote } from '../types/checklist'
 
 type VoteOption = 'easy' | 'normal' | 'hard' | 'veryHard'
@@ -17,12 +16,12 @@ function loadStoredState() {
     const rawState = window.localStorage.getItem(STORAGE_KEY)
 
     if (!rawState) {
-      return { votes: difficultyVotes, userVotes: {} }
+      return { votes: [], userVotes: {} }
     }
 
     return JSON.parse(rawState) as Pick<VoteState, 'votes' | 'userVotes'>
   } catch {
-    return { votes: difficultyVotes, userVotes: {} }
+    return { votes: [], userVotes: {} }
   }
 }
 

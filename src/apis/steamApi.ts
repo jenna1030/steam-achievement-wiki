@@ -18,6 +18,21 @@ export interface SteamApp {
   name: string
 }
 
+export interface SteamStoreGame {
+  appid: number
+  name: string
+  image: string
+  releaseDate: string
+}
+
+export interface SteamOwnedGame {
+  appid: number
+  name: string
+  img_icon_url?: string
+  playtime_forever: number
+  playtime_2weeks?: number
+}
+
 interface SteamGlobalAchievementResponse {
   achievementpercentages?: {
     achievements?: SteamGlobalAchievement[]
@@ -30,6 +45,22 @@ interface SteamAchievementsResponse {
 
 interface SteamAppListResponse {
   apps?: SteamApp[]
+}
+
+interface SteamStoreGamesResponse {
+  apps: SteamStoreGame[]
+  start: number
+  count: number
+  totalCount: number
+}
+
+interface SteamGameResponse {
+  game?: import('../types/game').Game
+}
+
+interface SteamLibraryResponse {
+  gameCount: number
+  games: SteamOwnedGame[]
 }
 
 export async function fetchSteamGlobalAchievementPercentages(
@@ -76,4 +107,50 @@ export async function fetchSteamAppList(query: string) {
   const data = (await response.json()) as SteamAppListResponse
 
   return data.apps ?? []
+}
+
+export async function fetchSteamStoreGames({
+  query,
+  start,
+  count = 20,
+}: {
+  query: string
+  start: number
+  count?: number
+}) {
+  const params = new URLSearchParams({
+    query,
+    start: String(start),
+    count: String(count),
+    filter: query.trim() ? '' : 'globaltopsellers',
+  })
+  const response = await fetch(`/api/steam/store-games?${params}`)
+
+  if (!response.ok) {
+    throw new Error('Steam Store 게임 목록을 불러오지 못했습니다.')
+  }
+
+  return (await response.json()) as SteamStoreGamesResponse
+}
+
+export async function fetchSteamGame(steamAppId: number) {
+  const response = await fetch(`/api/steam/game?appid=${steamAppId}`)
+
+  if (!response.ok) {
+    throw new Error('Steam 게임 정보를 불러오지 못했습니다.')
+  }
+
+  const data = (await response.json()) as SteamGameResponse
+
+  return data.game
+}
+
+export async function fetchSteamLibrary(steamId: string) {
+  const response = await fetch(`/api/steam/library?steamid=${steamId}`)
+
+  if (!response.ok) {
+    throw new Error('Steam 라이브러리를 불러오지 못했습니다.')
+  }
+
+  return (await response.json()) as SteamLibraryResponse
 }

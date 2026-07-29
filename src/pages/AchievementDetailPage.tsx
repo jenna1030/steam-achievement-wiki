@@ -199,7 +199,7 @@ export function AchievementDetailPage() {
           combinedGuides.map((guide) => (
             <SpoilerGuideTabs
               guide={guide}
-              key={`${guide.source ?? 'mock'}-${guide.id}`}
+              key={`${guide.source ?? 'local'}-${guide.id}`}
               onDelete={
                 guide.source === 'user' ? () => deleteGuide(guide.id) : undefined
               }

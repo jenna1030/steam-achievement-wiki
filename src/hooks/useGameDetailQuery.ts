@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchGameById } from '../apis/mockApi'
+import { fetchSteamGame } from '../apis/steamApi'
 
 export function useGameDetailQuery(gameId: number) {
   return useQuery({
-    queryKey: ['games', gameId],
-    queryFn: () => fetchGameById(gameId),
+    queryKey: ['steam', 'game', gameId],
+    queryFn: () => fetchSteamGame(gameId),
     enabled: Number.isFinite(gameId),
   })
 }

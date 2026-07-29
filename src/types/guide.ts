@@ -3,7 +3,7 @@ export type SpoilerLevel = 'hint' | 'detail' | 'spoiler'
 export interface AchievementGuide {
   id: number
   achievementId: number
-  source?: 'mock' | 'user'
+  source?: 'local' | 'user'
   title: string
   author: string
   hint: string

@@ -46,6 +46,15 @@ function createSteamAchievement(
   }
 }
 
+export function mapSteamAchievements(
+  steamAchievements: SteamAchievement[],
+  gameId: number,
+) {
+  return steamAchievements.map((achievement, index) =>
+    createSteamAchievement(achievement, gameId, index + 1),
+  )
+}
+
 export function mergeSteamAchievements(
   achievements: Achievement[],
   steamAchievements: SteamAchievement[],

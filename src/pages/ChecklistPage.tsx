@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { achievements } from '../mocks/achievements'
 import { useChecklistStore } from '../stores/checklistStore'
 import type { ChecklistStatus } from '../types/checklist'
 
@@ -8,6 +7,12 @@ const statusOptions: Array<{ value: ChecklistStatus; label: string }> = [
   { value: 'in-progress', label: '진행 중' },
   { value: 'done', label: '완료' },
 ]
+
+const STEAM_ONLY_ID_UNIT = 100000
+
+function getGameIdFromAchievementId(achievementId: number) {
+  return Math.floor(achievementId / STEAM_ONLY_ID_UNIT)
+}
 
 export function ChecklistPage() {
   const items = useChecklistStore((state) => state.items)
@@ -23,7 +28,7 @@ export function ChecklistPage() {
         <p className="eyebrow">Checklist</p>
         <h1>내 도전과제 체크리스트</h1>
         <p className="muted">
-          저장한 도전과제의 진행 상태를 관리하는 페이지입니다.
+          저장한 Steam 도전과제의 진행 상태와 메모를 브라우저에 보관합니다.
         </p>
       </section>
 
@@ -45,18 +50,16 @@ export function ChecklistPage() {
       {items.length > 0 ? (
         <section className="achievement-list">
           {items.map((item) => {
-            const achievement = achievements.find(
-              (target) => target.id === item.achievementId,
-            )
+            const gameId = getGameIdFromAchievementId(item.achievementId)
 
             return (
               <article className="checklist-card" key={item.achievementId}>
                 <div>
-                  <p>{achievement?.tags.join(', ') ?? '사용자 저장 항목'}</p>
-                  <h3>{achievement?.title ?? '알 수 없는 도전과제'}</h3>
+                  <p>Steam App #{gameId}</p>
+                  <h3>도전과제 #{item.achievementId}</h3>
                   <p className="muted">
-                    {achievement?.description ??
-                      'Steam API로 가져온 항목은 상세 설명이 제한될 수 있습니다.'}
+                    상세 페이지에서 Steam API 정보를 다시 불러와 이름과 설명을
+                    확인할 수 있습니다.
                   </p>
                 </div>
                 <div className="checklist-controls">
@@ -98,14 +101,12 @@ export function ChecklistPage() {
                   >
                     제거
                   </button>
-                  {achievement && (
-                    <Link
-                      className="text-link"
-                      to={`/achievements/${achievement.id}`}
-                    >
-                      상세 보기
-                    </Link>
-                  )}
+                  <Link
+                    className="text-link"
+                    to={`/achievements/${item.achievementId}`}
+                  >
+                    상세 보기
+                  </Link>
                 </div>
               </article>
             )

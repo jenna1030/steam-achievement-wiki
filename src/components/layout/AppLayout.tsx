@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import styled from 'styled-components'
+import { useAuthStore } from '../../stores/authStore'
 
 const TopbarActions = styled.div`
   display: flex;
@@ -10,14 +11,21 @@ const TopbarActions = styled.div`
   font-weight: 800;
 `
 
-const LoginButton = styled.button`
+const LoginLink = styled(NavLink)`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 36px;
   padding: 0 12px;
   color: var(--color-navy);
+  font-weight: 900;
+  text-decoration: none;
   background: var(--color-paper);
-  border-color: var(--color-paper);
+  border: 1px solid var(--color-paper);
+  border-radius: 6px;
 
-  &:hover {
+  &:hover,
+  &.is-active {
     color: var(--color-panel);
     background: var(--color-red);
     border-color: var(--color-red);
@@ -32,6 +40,8 @@ const navItems = [
 ]
 
 export function AppLayout() {
+  const user = useAuthStore((state) => state.user)
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -53,9 +63,14 @@ export function AppLayout() {
           ))}
         </nav>
         <TopbarActions>
-          <LoginButton type="button">
-            로그인하기
-          </LoginButton>
+          <LoginLink
+            className={({ isActive }) =>
+              isActive ? 'login-link is-active' : 'login-link'
+            }
+            to={user ? '/mypage' : '/login'}
+          >
+            {user ? '마이페이지' : '로그인하기'}
+          </LoginLink>
           <span>제작 이지현</span>
         </TopbarActions>
       </header>

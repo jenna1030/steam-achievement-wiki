@@ -18,14 +18,20 @@ export function HomePage() {
     isLoading: isFeaturedGamesLoading,
   } = useFeaturedGamesQuery()
   const favoriteGameIds = useLibraryStore((state) => state.favoriteGameIds)
-  const { data: firstGameAchievements = [] } = useAchievementsQuery(1)
-  const { data: secondGameAchievements = [] } = useAchievementsQuery(2)
-  const { data: thirdGameAchievements = [] } = useAchievementsQuery(3)
-  const allAchievements = [
-    ...firstGameAchievements,
-    ...secondGameAchievements,
-    ...thirdGameAchievements,
+  const firstGameAchievementsQuery = useAchievementsQuery(1145350)
+  const secondGameAchievementsQuery = useAchievementsQuery(413150)
+  const thirdGameAchievementsQuery = useAchievementsQuery(367520)
+  const featuredAchievementQueries = [
+    firstGameAchievementsQuery,
+    secondGameAchievementsQuery,
+    thirdGameAchievementsQuery,
   ]
+  const allAchievements = featuredAchievementQueries.flatMap(
+    (query) => query.data ?? [],
+  )
+  const isAchievementsLoading = featuredAchievementQueries.some(
+    (query) => query.isLoading,
+  )
   const recommendations = recommendEasyAchievements(
     allAchievements,
     featuredGames,
@@ -48,10 +54,10 @@ export function HomePage() {
       <section className="hero-section">
         <div className="hero-copy">
           <p className="eyebrow">Steam 도전과제 공략 위키</p>
-          <h1>깨고 싶은 도전과제를 공략과 체크리스트로 관리하세요.</h1>
+          <h1>Steam 도전과제를 검색하고 공략과 체크리스트로 관리하세요.</h1>
           <p className="hero-description">
-            Steam 게임의 도전과제를 살펴보고, 스포일러 단계별 공략과 난이도
-            투표를 참고해 다음 목표를 정하는 개인 프로젝트입니다.
+            게임 appid를 기준으로 Steam 공개 도전과제와 전체 달성률을 불러오고,
+            개인 공략과 진행 상태는 브라우저에 저장하는 개인 프로젝트입니다.
           </p>
           <form
             className="search-panel"
@@ -67,9 +73,7 @@ export function HomePage() {
                 placeholder="예: Hollow Knight"
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
-              <button type="submit">
-                검색
-              </button>
+              <button type="submit">검색</button>
             </div>
           </form>
         </div>
@@ -80,36 +84,56 @@ export function HomePage() {
           <p className="eyebrow">Featured Games</p>
           <h2>도전과제를 확인할 게임</h2>
         </div>
-        {isFeaturedGamesLoading && <LoadingState message="인기 게임을 불러오는 중입니다." />}
-        {isFeaturedGamesError && <ErrorState />}
+        {isFeaturedGamesLoading && (
+          <LoadingState message="Steam 게임 정보를 불러오는 중입니다." />
+        )}
+        {isFeaturedGamesError && (
+          <ErrorState
+            message="API 서버가 켜져 있는지 확인해주세요."
+            title="Steam 게임 정보를 가져오지 못했습니다."
+          />
+        )}
         {!isFeaturedGamesLoading && !isFeaturedGamesError && (
           <div className="game-grid">
-            {featuredGames.map((game) => (
-              <Link
-                className="game-card clickable-card"
-                key={game.id}
-                to={`/games/${game.id}`}
-              >
-                <img src={game.image} alt={`${game.title} 대표 이미지`} />
-                <div className="game-card-body">
-                  <p>{game.genre}</p>
-                  <h3>{game.title}</h3>
-                  <dl>
-                    <div>
-                      <dt>도전과제</dt>
-                      <dd>{game.achievementCount}개</dd>
-                    </div>
-                    <div>
-                      <dt>평균 달성률</dt>
-                      <dd>{game.averageRate}%</dd>
-                    </div>
-                  </dl>
-                  <span className="text-link">
-                    상세 보기
-                  </span>
-                </div>
-              </Link>
-            ))}
+            {featuredGames.map((game) => {
+              const achievements = allAchievements.filter(
+                (achievement) => achievement.gameId === game.id,
+              )
+              const averageRate =
+                achievements.length > 0
+                  ? Math.round(
+                      achievements.reduce(
+                        (total, achievement) => total + achievement.globalRate,
+                        0,
+                      ) / achievements.length,
+                    )
+                  : 0
+
+              return (
+                <Link
+                  className="game-card clickable-card"
+                  key={game.id}
+                  to={`/games/${game.id}`}
+                >
+                  <img src={game.image} alt={`${game.title} 대표 이미지`} />
+                  <div className="game-card-body">
+                    <p>Steam App #{game.steamAppId}</p>
+                    <h3>{game.title}</h3>
+                    <dl>
+                      <div>
+                        <dt>도전과제</dt>
+                        <dd>{achievements.length}개</dd>
+                      </div>
+                      <div>
+                        <dt>평균 달성률</dt>
+                        <dd>{averageRate}%</dd>
+                      </div>
+                    </dl>
+                    <span className="text-link">상세 보기</span>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>
@@ -119,11 +143,15 @@ export function HomePage() {
           <p className="eyebrow">Easy Picks</p>
           <h2>가볍게 시작할 도전과제</h2>
           <p className="muted">
-            달성률, 예상 소요 시간, 난이도 투표를 기준으로 추천하는
-            영역입니다.
+            Steam 전체 달성률과 체감 난이도를 기준으로 시작하기 쉬운 항목을
+            추천합니다.
           </p>
         </div>
-        <EasyAchievementList recommendations={recommendations} />
+        {isAchievementsLoading ? (
+          <LoadingState message="추천 도전과제를 계산하는 중입니다." />
+        ) : (
+          <EasyAchievementList recommendations={recommendations} />
+        )}
       </section>
 
       <section className="section">
