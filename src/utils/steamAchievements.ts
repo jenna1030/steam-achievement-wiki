@@ -35,7 +35,7 @@ function createSteamAchievement(
     globalRate: Number(steamAchievement.percent.toFixed(1)),
     difficulty: getDifficultyFromPercent(steamAchievement.percent),
     estimatedMinutes: 0,
-    tags: ['Steam API'],
+    tags: [],
     isHidden: steamAchievement.hidden === 1,
     isMissable: false,
     requiresSecondRun: false,

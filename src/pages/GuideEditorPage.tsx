@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { GuideForm } from '../components/guide/GuideForm'
@@ -9,10 +9,16 @@ import {
 } from '../hooks/useAchievementsQuery'
 import { useGamesQuery } from '../hooks/useGamesQuery'
 import { useGuideStore } from '../stores/guideStore'
+import type { Achievement } from '../types/achievement'
 import type { GuideFormValues } from '../types/guide'
+
+interface GuideEditorLocationState {
+  achievement?: Achievement
+}
 
 export function GuideEditorPage() {
   const [searchParams] = useSearchParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const guideId = Number(searchParams.get('guideId'))
   const achievementId = Number(searchParams.get('achievementId') ?? 103)
@@ -21,6 +27,8 @@ export function GuideEditorPage() {
   const addGuide = useGuideStore((state) => state.addGuide)
   const updateGuide = useGuideStore((state) => state.updateGuide)
   const editingGuide = userGuides.find((guide) => guide.id === guideId)
+  const stateAchievement = (location.state as GuideEditorLocationState | null)
+    ?.achievement
   const defaultAchievementId = editingGuide?.achievementId ?? achievementId
   const {
     data: defaultAchievement,
@@ -36,27 +44,47 @@ export function GuideEditorPage() {
     isError: isAchievementsError,
     isLoading: isAchievementsLoading,
   } = useAchievementsQuery(selectedGameId)
+  const defaultAchievementFromState =
+    stateAchievement?.id === defaultAchievementId ? stateAchievement : undefined
+  const resolvedDefaultAchievement =
+    defaultAchievement ?? defaultAchievementFromState
+  const selectableAchievements =
+    defaultAchievementFromState &&
+    defaultAchievementFromState.gameId === selectedGameId &&
+    !achievements.some(
+      (achievement) => achievement.id === defaultAchievementFromState.id,
+    )
+      ? [defaultAchievementFromState, ...achievements]
+      : achievements
 
   useEffect(() => {
-    if (defaultAchievement) {
-      setSelectedGameId(defaultAchievement.gameId)
+    if (resolvedDefaultAchievement) {
+      setSelectedGameId(resolvedDefaultAchievement.gameId)
       return
     }
 
-    if (!defaultAchievement && games.length > 0) {
+    if (!resolvedDefaultAchievement && games.length > 0) {
       setSelectedGameId(games[0].id)
     }
-  }, [defaultAchievement, games])
+  }, [games, resolvedDefaultAchievement])
 
   const handleSubmit = (values: GuideFormValues) => {
+    const selectedAchievement = selectableAchievements.find(
+      (achievement) => achievement.id === Number(values.achievementId),
+    )
+
     if (editingGuide) {
       updateGuide(editingGuide.id, values)
-      navigate(`/achievements/${values.achievementId}`)
+      navigate(`/achievements/${values.achievementId}`, {
+        state: { achievement: selectedAchievement },
+      })
       return
     }
 
     const guide = addGuide(values)
-    navigate(`/achievements/${guide.achievementId}`)
+    navigate(`/achievements/${guide.achievementId}`, {
+      state: { achievement: selectedAchievement },
+    })
   }
 
   return (
@@ -85,7 +113,7 @@ export function GuideEditorPage() {
         !isGamesError &&
         !isAchievementsError && (
           <GuideForm
-            achievements={achievements}
+            achievements={selectableAchievements}
             defaultAchievementId={defaultAchievementId}
             defaultGuide={editingGuide}
             games={games}

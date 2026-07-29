@@ -9,13 +9,6 @@ import { useFeaturedGamesQuery } from '../hooks/useGamesQuery'
 import { useLibraryStore } from '../stores/libraryStore'
 import { recommendEasyAchievements } from '../utils/recommendAchievements'
 
-const roadmapItems = [
-  '게임 검색과 관심 게임 등록',
-  '도전과제 목록, 정렬, 태그 필터',
-  '스포일러 단계별 공략 보기',
-  '체크리스트와 난이도 투표',
-]
-
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
@@ -80,20 +73,6 @@ export function HomePage() {
             </div>
           </form>
         </div>
-        <aside className="hero-summary" aria-label="서비스 요약">
-          <div>
-            <strong>1차 목표</strong>
-            <span>검색, 상세, 공략, 체크리스트</span>
-          </div>
-          <div>
-            <strong>데이터 전략</strong>
-            <span>mock data 먼저, Steam API는 단계적으로</span>
-          </div>
-          <div>
-            <strong>과제 포인트</strong>
-            <span>TanStack Query 적용 예정</span>
-          </div>
-        </aside>
       </section>
 
       <section className="section" id="games">
@@ -148,19 +127,10 @@ export function HomePage() {
       </section>
 
       <section className="section">
-        <AchievementRateChart achievements={allAchievements} />
-      </section>
-
-      <section className="section roadmap" id="roadmap">
-        <div className="section-heading">
-          <p className="eyebrow">Next Build</p>
-          <h2>다음 구현 순서</h2>
-        </div>
-        <ol>
-          {roadmapItems.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ol>
+        <AchievementRateChart
+          achievements={allAchievements}
+          games={featuredGames}
+        />
       </section>
     </>
   )

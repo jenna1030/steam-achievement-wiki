@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { AchievementMetaPanel } from '../components/achievement/AchievementMetaPanel'
 import { ChecklistButton } from '../components/checklist/ChecklistButton'
 import { DifficultyVoteChart } from '../components/chart/DifficultyVoteChart'
@@ -13,12 +13,18 @@ import {
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useGuideStore } from '../stores/guideStore'
 import { useVoteStore } from '../stores/voteStore'
+import type { Achievement } from '../types/achievement'
+
+interface AchievementLocationState {
+  achievement?: Achievement
+}
 
 export function AchievementDetailPage() {
   const { achievementId } = useParams()
+  const location = useLocation()
   const achievementIdNumber = Number(achievementId)
   const {
-    data: achievement,
+    data: queriedAchievement,
     isError: isAchievementError,
     isLoading: isAchievementLoading,
   } = useAchievementDetailQuery(achievementIdNumber)
@@ -27,6 +33,11 @@ export function AchievementDetailPage() {
     isError: isGuidesError,
     isLoading: isGuidesLoading,
   } = useAchievementGuidesQuery(achievementIdNumber)
+  const stateAchievement = (location.state as AchievementLocationState | null)
+    ?.achievement
+  const achievement =
+    queriedAchievement ??
+    (stateAchievement?.id === achievementIdNumber ? stateAchievement : undefined)
   const userGuides = useGuideStore((state) => state.userGuides)
   const deleteGuide = useGuideStore((state) => state.deleteGuide)
   const votes = useVoteStore((state) => state.votes)

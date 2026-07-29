@@ -1,4 +1,28 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import styled from 'styled-components'
+
+const TopbarActions = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #dce6ff;
+  font-size: 13px;
+  font-weight: 800;
+`
+
+const LoginButton = styled.button`
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--color-navy);
+  background: var(--color-paper);
+  border-color: var(--color-paper);
+
+  &:hover {
+    color: var(--color-panel);
+    background: var(--color-red);
+    border-color: var(--color-red);
+  }
+`
 
 const navItems = [
   { to: '/', label: '홈' },
@@ -28,12 +52,12 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="topbar-actions">
-          <button className="login-button" type="button">
+        <TopbarActions>
+          <LoginButton type="button">
             로그인하기
-          </button>
+          </LoginButton>
           <span>제작 이지현</span>
-        </div>
+        </TopbarActions>
       </header>
       <Outlet />
     </div>
