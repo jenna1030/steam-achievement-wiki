@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
-import { GuideForm } from '../components/guide/GuideForm'
+import {
+  GuideForm,
+  type GuideGameOption,
+} from '../components/guide/GuideForm'
 import {
   useAchievementDetailQuery,
   useAchievementsQuery,
 } from '../hooks/useAchievementsQuery'
+import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useGamesQuery } from '../hooks/useGamesQuery'
+import { useSteamAppsQuery } from '../hooks/useSteamAppsQuery'
 import { useGuideStore } from '../stores/guideStore'
 import type { Achievement } from '../types/achievement'
 import type { GuideFormValues } from '../types/guide'
@@ -33,6 +38,8 @@ export function GuideEditorPage() {
   const [selectedGameId, setSelectedGameId] = useState(
     getGameIdFromAchievementId(achievementId) ?? 1145350,
   )
+  const [gameSearchQuery, setGameSearchQuery] = useState('')
+  const [debouncedGameSearchQuery, setDebouncedGameSearchQuery] = useState('')
   const userGuides = useGuideStore((state) => state.userGuides)
   const addGuide = useGuideStore((state) => state.addGuide)
   const updateGuide = useGuideStore((state) => state.updateGuide)
@@ -49,6 +56,12 @@ export function GuideEditorPage() {
     isError: isGamesError,
     isLoading: isGamesLoading,
   } = useGamesQuery()
+  const { data: selectedGame } = useGameDetailQuery(selectedGameId)
+  const {
+    data: searchedApps = [],
+    isError: isGameSearchError,
+    isFetching: isGameSearchLoading,
+  } = useSteamAppsQuery(debouncedGameSearchQuery)
   const {
     data: achievements = [],
     isError: isAchievementsError,
@@ -69,6 +82,50 @@ export function GuideEditorPage() {
     )
       ? [defaultAchievementFromState, ...achievements]
       : achievements
+  const gameOptions = useMemo(() => {
+    const options: GuideGameOption[] = []
+    const seen = new Set<number>()
+    const addOption = (option: GuideGameOption | undefined) => {
+      if (!option || seen.has(option.id)) {
+        return
+      }
+
+      seen.add(option.id)
+      options.push(option)
+    }
+
+    addOption(
+      selectedGame
+        ? { id: selectedGame.steamAppId, title: selectedGame.title }
+        : { id: selectedGameId, title: `Steam App #${selectedGameId}` },
+    )
+
+    if (debouncedGameSearchQuery.trim().length >= 2) {
+      searchedApps.forEach((app) =>
+        addOption({ id: app.appid, title: app.name }),
+      )
+    } else {
+      games.forEach((game) =>
+        addOption({ id: game.steamAppId, title: game.title }),
+      )
+    }
+
+    return options
+  }, [
+    debouncedGameSearchQuery,
+    games,
+    searchedApps,
+    selectedGame,
+    selectedGameId,
+  ])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedGameSearchQuery(gameSearchQuery.trim())
+    }, 300)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [gameSearchQuery])
 
   useEffect(() => {
     if (resolvedDefaultAchievement) {
@@ -132,9 +189,13 @@ export function GuideEditorPage() {
             achievements={selectableAchievements}
             defaultAchievementId={defaultAchievementId}
             defaultGuide={editingGuide}
-            games={games}
+            gameOptions={gameOptions}
+            gameSearchQuery={gameSearchQuery}
+            isGameSearchError={isGameSearchError}
+            isGameSearchLoading={isGameSearchLoading}
             selectedGameId={selectedGameId}
             onGameChange={setSelectedGameId}
+            onGameSearchChange={setGameSearchQuery}
             onSubmit={handleSubmit}
           />
         )}

@@ -1,3 +1,8 @@
+import type { Game } from '../types/game'
+
+const OUTDATED_API_MESSAGE =
+  '이전 버전의 API 서버가 실행 중입니다. npm run dev:api를 다시 시작해주세요.'
+
 export interface SteamGlobalAchievement {
   name: string
   percent: number | string
@@ -57,7 +62,7 @@ interface SteamStoreGamesResponse {
 }
 
 interface SteamGameResponse {
-  game?: import('../types/game').Game
+  game?: Game
 }
 
 interface SteamLibraryResponse {
@@ -140,7 +145,20 @@ export async function fetchSteamStoreGames({
     throw new Error('Steam Store 게임 목록을 불러오지 못했습니다.')
   }
 
-  return (await response.json()) as SteamStoreGamesResponse
+  const data = (await response.json()) as SteamStoreGamesResponse
+
+  if (
+    !Array.isArray(data.apps) ||
+    data.apps.some(
+      (game) =>
+        !Array.isArray(game.genres) ||
+        typeof game.hasAchievements !== 'boolean',
+    )
+  ) {
+    throw new Error(OUTDATED_API_MESSAGE)
+  }
+
+  return data
 }
 
 export async function fetchSteamGame(steamAppId: number) {
@@ -151,8 +169,19 @@ export async function fetchSteamGame(steamAppId: number) {
   }
 
   const data = (await response.json()) as SteamGameResponse
+  const game = data.game
 
-  return data.game
+  if (
+    game &&
+    (game.genre === 'Steam App' ||
+      game.developer === 'Steam 제공' ||
+      game.publisher === 'Steam 제공' ||
+      game.releaseDate === 'Steam API 기준')
+  ) {
+    throw new Error(OUTDATED_API_MESSAGE)
+  }
+
+  return game
 }
 
 export async function fetchSteamLibrary() {

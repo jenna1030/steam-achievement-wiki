@@ -1251,19 +1251,6 @@ dd {
   margin-bottom: 28px;
 }
 
-.api-status-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  margin-bottom: 34px;
-  padding: 20px;
-  background: #ffffff;
-  border: 1px solid #ddd6c6;
-  border-radius: 8px;
-  box-shadow: 0 16px 36px rgba(58, 45, 20, 0.07);
-}
-
 .action-panel,
 .vote-panel,
 .checklist-card {
@@ -1369,23 +1356,6 @@ dd {
   display: flex;
   flex-wrap: wrap;
   gap: 10px 18px;
-}
-
-.api-status-panel h2 {
-  margin-bottom: 8px;
-  font-size: 26px;
-}
-
-.api-status-panel strong,
-.api-status-panel span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 38px;
-  padding: 0 12px;
-  color: #0f6d58;
-  font-weight: 900;
-  background: #e8f3ef;
-  border-radius: 999px;
 }
 
 .loading-dots {
@@ -1577,7 +1547,6 @@ dt,
 .empty-state,
 .editor-form,
 .meta-panel,
-.api-status-panel,
 .action-panel,
 .vote-panel,
 .checklist-card {
@@ -1598,7 +1567,6 @@ dt,
 
 .search-panel,
 .toolbar,
-.api-status-panel,
 .action-panel,
 .vote-panel {
   border: 1px solid var(--color-line);
@@ -1642,9 +1610,7 @@ button:hover,
 
 .secondary-button,
 .spoiler-tab,
-.vote-button,
-.api-status-panel strong,
-.api-status-panel span {
+.vote-button {
   color: var(--color-navy);
   background: #e8edf8;
   border-color: #b8c4dc;
@@ -1702,7 +1668,6 @@ button:hover,
   .achievement-toolbar,
   .info-grid,
   .spoiler-columns,
-  .api-status-panel,
   .meta-panel,
   .guide-header,
   .spoiler-tab-list,

@@ -21,6 +21,7 @@ export function GameSearchPage() {
   const addRecentSearch = useLibraryStore((state) => state.addRecentSearch)
   const {
     data,
+    error,
     fetchNextPage,
     hasNextPage,
     isError,
@@ -132,8 +133,9 @@ export function GameSearchPage() {
         {isLoading && <LoadingState message="Steam Store 목록을 불러오는 중입니다." />}
         {isError && (
           <p className="muted">
-            Steam Store 목록을 불러오지 못했습니다. `npm run dev:api`가 실행
-            중인지 확인해주세요.
+            {error instanceof Error
+              ? error.message
+              : 'Steam Store 목록을 불러오지 못했습니다. API 서버 실행 상태를 확인해주세요.'}
           </p>
         )}
         {games.length > 0 && (

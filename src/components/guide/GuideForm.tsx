@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { Achievement, AchievementId } from '../../types/achievement'
-import type { Game } from '../../types/game'
 import type { AchievementGuide, GuideFormValues } from '../../types/guide'
+
+export interface GuideGameOption {
+  id: number
+  title: string
+}
 
 interface GuideFormProps {
   achievements: Achievement[]
   defaultAchievementId: AchievementId
   defaultGuide?: AchievementGuide
-  games: Game[]
+  gameOptions: GuideGameOption[]
+  gameSearchQuery: string
+  isGameSearchError: boolean
+  isGameSearchLoading: boolean
   selectedGameId: number
+  onGameSearchChange: (query: string) => void
   onGameChange: (gameId: number) => void
   onSubmit: (values: GuideFormValues) => void
 }
@@ -22,12 +30,15 @@ export function GuideForm({
   achievements,
   defaultAchievementId,
   defaultGuide,
-  games,
+  gameOptions,
+  gameSearchQuery,
+  isGameSearchError,
+  isGameSearchLoading,
   selectedGameId,
+  onGameSearchChange,
   onGameChange,
   onSubmit,
 }: GuideFormProps) {
-  const [gameSearchQuery, setGameSearchQuery] = useState('')
   const [achievementSearchQuery, setAchievementSearchQuery] = useState('')
   const {
     formState: { errors },
@@ -62,19 +73,6 @@ export function GuideForm({
   })
   const hasSpoiler = watch('hasSpoiler')
   const selectedAchievementId = watch('achievementId')
-  const filteredGames = useMemo(() => {
-    const normalizedQuery = gameSearchQuery.trim().toLowerCase()
-
-    if (!normalizedQuery) {
-      return games
-    }
-
-    return games.filter(
-      (game) =>
-        game.title.toLowerCase().includes(normalizedQuery) ||
-        String(game.steamAppId).includes(normalizedQuery),
-    )
-  }, [gameSearchQuery, games])
   const filteredAchievements = useMemo(() => {
     const normalizedQuery = achievementSearchQuery.trim().toLowerCase()
 
@@ -88,7 +86,7 @@ export function GuideForm({
         achievement.description.toLowerCase().includes(normalizedQuery),
     )
   }, [achievementSearchQuery, achievements])
-  const selectedGame = games.find((game) => game.id === selectedGameId)
+  const selectedGame = gameOptions.find((game) => game.id === selectedGameId)
   const selectedAchievement = achievements.find(
     (achievement) => achievement.id === selectedAchievementId,
   )
@@ -129,8 +127,17 @@ export function GuideForm({
               type="search"
               value={gameSearchQuery}
               placeholder="예: Hollow Knight 또는 367520"
-              onChange={(event) => setGameSearchQuery(event.target.value)}
+              onChange={(event) => onGameSearchChange(event.target.value)}
             />
+            <span className="form-note" role="status">
+              {gameSearchQuery.trim().length < 2
+                ? '게임명 또는 appid를 두 글자 이상 입력하면 Steam 앱을 검색합니다.'
+                : isGameSearchLoading
+                  ? 'Steam 앱을 검색하는 중입니다.'
+                  : isGameSearchError
+                    ? '검색하지 못했습니다. API 서버 실행 상태를 확인해주세요.'
+                    : `${gameOptions.length}개 앱을 선택할 수 있습니다.`}
+            </span>
           </label>
           <label>
             Steam 앱 선택
@@ -138,9 +145,9 @@ export function GuideForm({
               value={selectedGameId}
               onChange={(event) => onGameChange(Number(event.target.value))}
             >
-              {filteredGames.map((game) => (
+              {gameOptions.map((game) => (
                 <option key={game.id} value={game.id}>
-                  {game.title} #{game.steamAppId}
+                  {game.title} #{game.id}
                 </option>
               ))}
             </select>

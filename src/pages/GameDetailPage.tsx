@@ -24,13 +24,13 @@ export function GameDetailPage() {
   const [showHidden, setShowHidden] = useState(false)
   const {
     data: game,
+    error: gameError,
     isError: isGameError,
     isLoading: isGameLoading,
   } = useGameDetailQuery(gameIdNumber)
   const {
     data: steamAchievements = [],
     isError: isAchievementsError,
-    isFetching: isAchievementsFetching,
     isLoading: isAchievementsLoading,
   } = useAchievementsQuery(gameIdNumber)
   const userGuides = useGuideStore((state) => state.userGuides)
@@ -83,7 +83,11 @@ export function GameDetailPage() {
     return (
       <main className="page">
         <ErrorState
-          message="Steam 앱 정보를 불러오지 못했습니다. API 서버가 켜져 있는지 확인해주세요."
+          message={
+            gameError instanceof Error
+              ? gameError.message
+              : 'Steam 앱 정보를 불러오지 못했습니다. API 서버가 켜져 있는지 확인해주세요.'
+          }
           title="게임 정보를 가져오지 못했습니다."
         />
       </main>
@@ -140,24 +144,6 @@ export function GameDetailPage() {
           <a className="text-link" href={game.storeUrl} target="_blank">
             Steam 상점 바로가기
           </a>
-        </div>
-      </section>
-
-      <section className="api-status-panel" aria-label="Steam API 연결 상태">
-        <div>
-          <p className="eyebrow">Steam API</p>
-          <h2>공식 도전과제 데이터</h2>
-          <p className="muted">
-            Steam Web API에서 도전과제 이름, 설명, 숨김 여부, 전체 유저
-            달성률을 불러와 목록을 구성합니다.
-          </p>
-        </div>
-        <div>
-          {isAchievementsFetching && <span>연결 확인 중</span>}
-          {!isAchievementsFetching && !isAchievementsError && (
-            <strong>{achievements.length}개 항목</strong>
-          )}
-          {isAchievementsError && <strong>연결 실패</strong>}
         </div>
       </section>
 
