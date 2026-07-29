@@ -463,7 +463,7 @@ async function handleSteamStoreGames(requestUrl, response) {
   )
   const count = getBoundedInteger(
     requestUrl.searchParams.get('count'),
-    20,
+    25,
     1,
     50,
   )
@@ -489,6 +489,10 @@ async function handleSteamStoreGames(requestUrl, response) {
       tagId: selectedTag?.id,
     })
     const apps = await enrichSteamStoreGames(searchPage.apps, tagNameById)
+    // Steam Store search advances on fixed result-page boundaries. Moving by
+    // the returned item count can request the same upstream page again when
+    // Steam omits an item from a 25-result page.
+    const nextStart = start + count
 
     sendJson(response, 200, {
       apps,
@@ -496,6 +500,10 @@ async function handleSteamStoreGames(requestUrl, response) {
       start,
       count,
       totalCount: searchPage.totalCount || apps.length,
+      nextStart:
+        apps.length > 0 && nextStart < searchPage.totalCount
+          ? nextStart
+          : null,
     })
   } catch (error) {
     sendJson(response, 502, {

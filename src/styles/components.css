@@ -585,7 +585,8 @@ dd {
 }
 
 .skeleton-image,
-.skeleton-line {
+.skeleton-line,
+.skeleton-button {
   position: relative;
   overflow: hidden;
   background: #e7dfcf;
@@ -605,8 +606,14 @@ dd {
   width: 42%;
 }
 
+.skeleton-button {
+  width: 100%;
+  height: 46px;
+}
+
 .skeleton-image::after,
-.skeleton-line::after {
+.skeleton-line::after,
+.skeleton-button::after {
   position: absolute;
   inset: 0;
   content: '';
@@ -618,6 +625,11 @@ dd {
   );
   transform: translateX(-100%);
   animation: skeleton-shimmer 1.4s infinite;
+}
+
+.game-search-skeleton-content {
+  display: grid;
+  gap: 10px;
 }
 
 @keyframes skeleton-shimmer {

@@ -83,6 +83,7 @@ interface SteamStoreGamesResponse {
   start: number
   count: number
   totalCount: number
+  nextStart: number | null
 }
 
 interface SteamGameResponse {

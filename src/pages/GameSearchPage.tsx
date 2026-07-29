@@ -1,11 +1,43 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { LoadingState } from '../components/common/LoadingState'
 import { GameSearchForm } from '../components/search/GameSearchForm'
 import { useSteamStoreGamesQuery } from '../hooks/useSteamStoreGamesQuery'
 import { useLibraryStore } from '../stores/libraryStore'
 import type { GameSearchFilters } from '../types/search'
 import { matchesAchievementCountFilter } from '../utils/gameSearchFilters'
+import { mergeUniqueSteamStoreGames } from '../utils/storeGamePagination'
+
+function GameSearchSkeleton({
+  count,
+  label,
+}: {
+  count: number
+  label: string
+}) {
+  return (
+    <div
+      aria-label={label}
+      className="steam-game-grid game-search-skeleton-grid"
+      role="status"
+    >
+      {Array.from({ length: count }).map((_, index) => (
+        <article
+          aria-hidden="true"
+          className="steam-game-card skeleton-card game-search-skeleton-card"
+          key={index}
+        >
+          <div className="skeleton-image" />
+          <div className="game-search-skeleton-content">
+            <div className="skeleton-line skeleton-line-short" />
+            <div className="skeleton-line" />
+            <div className="skeleton-line skeleton-line-short" />
+          </div>
+          <div className="skeleton-button" />
+        </article>
+      ))}
+    </div>
+  )
+}
 
 export function GameSearchPage() {
   const [searchParams] = useSearchParams()
@@ -30,8 +62,8 @@ export function GameSearchPage() {
     isLoading,
   } = useSteamStoreGamesQuery(submittedQuery, filters.genre)
   const loadedGames = useMemo(
-    () => data?.pages.flatMap((page) => page.apps) ?? [],
-    [data],
+    () => mergeUniqueSteamStoreGames(data?.pages),
+    [data?.pages],
   )
   const classifications = useMemo(
     () =>
@@ -63,7 +95,7 @@ export function GameSearchPage() {
         <p className="eyebrow">Game Search</p>
         <h1>게임 검색</h1>
         <p className="muted">
-          Steam Store 목록을 20개씩 가져오고, 카드를 누르면 appid 기반 상세
+          Steam Store 목록을 25개씩 가져오고, 카드를 누르면 appid 기반 상세
           페이지로 이동합니다.
         </p>
       </section>
@@ -116,13 +148,17 @@ export function GameSearchPage() {
         </section>
       )}
 
-      <section className="steam-app-panel" aria-label="Steam Store 게임 목록">
+      <section
+        aria-busy={isLoading || isFetchingNextPage}
+        aria-label="Steam Store 게임 목록"
+        className="steam-app-panel"
+      >
         <div>
           <p className="eyebrow">Steam Store</p>
           <h2>{submittedQuery ? '검색 결과' : '상위 게임'}</h2>
           <p className="muted">
             {submittedQuery
-              ? '검색어에 맞는 Steam Store 게임을 20개씩 불러옵니다.'
+              ? '검색어에 맞는 Steam Store 게임을 25개씩 불러옵니다.'
               : '검색어가 없으면 Steam Store 상위 게임을 먼저 보여줍니다.'}
           </p>
         </div>
@@ -132,7 +168,12 @@ export function GameSearchPage() {
             ? ` · 현재 불러온 목록 중 ${games.length}개 조건 일치`
             : ''}
         </span>
-        {isLoading && <LoadingState message="Steam Store 목록을 불러오는 중입니다." />}
+        {isLoading && (
+          <GameSearchSkeleton
+            count={6}
+            label="Steam Store 게임 목록을 불러오는 중입니다."
+          />
+        )}
         {isError && (
           <p className="muted">
             {error instanceof Error
@@ -191,17 +232,22 @@ export function GameSearchPage() {
             })}
           </div>
         )}
+        {isFetchingNextPage && (
+          <GameSearchSkeleton
+            count={3}
+            label="Steam Store 게임을 추가로 불러오는 중입니다."
+          />
+        )}
         {!isLoading && games.length === 0 && !isError && (
           <p className="muted">Steam Store 결과가 없습니다.</p>
         )}
-        {hasNextPage && (
+        {hasNextPage && !isFetchingNextPage && (
           <button
             className="load-more-button"
             type="button"
-            disabled={isFetchingNextPage}
             onClick={() => void fetchNextPage()}
           >
-            {isFetchingNextPage ? '불러오는 중' : '더보기'}
+            더보기
           </button>
         )}
       </section>

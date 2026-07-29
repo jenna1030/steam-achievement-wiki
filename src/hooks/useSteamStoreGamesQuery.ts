@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { fetchSteamStoreGames } from '../apis/steamApi'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 25
 
 export function useSteamStoreGamesQuery(query: string, tag: string) {
   return useInfiniteQuery({
@@ -14,11 +14,7 @@ export function useSteamStoreGamesQuery(query: string, tag: string) {
         count: PAGE_SIZE,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      const nextStart = lastPage.start + lastPage.apps.length
-
-      return nextStart < lastPage.totalCount ? nextStart : undefined
-    },
+    getNextPageParam: (lastPage) => lastPage.nextStart ?? undefined,
     staleTime: 1000 * 60 * 10,
   })
 }
