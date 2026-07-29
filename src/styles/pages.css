@@ -714,14 +714,19 @@
   display: grid;
   gap: 4px;
   align-content: center;
-  color: var(--color-muted);
-  background: rgba(255, 250, 242, 0.74);
-  border: 1px dashed var(--color-line);
+  color: #4f5b77;
+  background: #e9ecf3;
+  border: 4px double #9ca8c1;
+  transition:
+    color 220ms ease,
+    background-color 220ms ease,
+    border-color 220ms ease;
 }
 
 .search-guidance strong {
   color: var(--color-navy);
   font-size: 12px;
+  transition: color 220ms ease;
 }
 
 .search-guidance span {
