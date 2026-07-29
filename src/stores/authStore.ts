@@ -1,50 +1,56 @@
 import { create } from 'zustand'
+import {
+  clearSteamSession,
+  fetchSteamSession,
+  type SteamSessionUser,
+} from '../apis/steamApi'
 
-const STORAGE_KEY = 'steam-achievement-wiki-auth'
+const LEGACY_STORAGE_KEY = 'steam-achievement-wiki-auth'
 
-interface SteamUser {
-  steamId: string
-}
+type AuthStatus = 'idle' | 'loading' | 'ready'
 
 interface AuthState {
-  user: SteamUser | null
-  loginWithSteamId: (steamId: string) => void
-  logout: () => void
+  user: SteamSessionUser | null
+  status: AuthStatus
+  hydrate: () => Promise<SteamSessionUser | null>
+  logout: () => Promise<void>
 }
 
-function loadStoredUser() {
-  try {
-    const rawUser = window.localStorage.getItem(STORAGE_KEY)
+let hydrationRequest: Promise<SteamSessionUser | null> | null = null
 
-    return rawUser ? (JSON.parse(rawUser) as SteamUser) : null
-  } catch {
-    return null
-  }
-}
+function requestSession() {
+  hydrationRequest ??= fetchSteamSession().finally(() => {
+    hydrationRequest = null
+  })
 
-function persistUser(user: SteamUser | null) {
-  if (!user) {
-    window.localStorage.removeItem(STORAGE_KEY)
-    return
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  return hydrationRequest
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: loadStoredUser(),
-  loginWithSteamId: (steamId) =>
-    set(() => {
-      const user = { steamId }
+  user: null,
+  status: 'idle',
+  hydrate: async () => {
+    set({ status: 'loading' })
 
-      persistUser(user)
+    try {
+      const user = await requestSession()
 
-      return { user }
-    }),
-  logout: () =>
-    set(() => {
-      persistUser(null)
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+      set({ status: 'ready', user })
 
-      return { user: null }
-    }),
+      return user
+    } catch {
+      set({ status: 'ready', user: null })
+
+      return null
+    }
+  },
+  logout: async () => {
+    try {
+      await clearSteamSession()
+    } finally {
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+      set({ status: 'ready', user: null })
+    }
+  },
 }))

@@ -1,12 +1,8 @@
 import { createServer } from 'node:http'
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-
-const PORT = Number(process.env.STEAM_PROXY_PORT ?? 3001)
-const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL ?? 'http://localhost:5173'
-const SERVER_BASE_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`
-let steamAppsCache = null
-const steamStoreDetailsCache = new Map()
+import { pathToFileURL } from 'node:url'
 
 function loadEnvFile() {
   try {
@@ -36,20 +32,36 @@ function loadEnvFile() {
   }
 }
 
+loadEnvFile()
+
+const PORT = Number(process.env.STEAM_PROXY_PORT ?? 3001)
+const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL ?? 'http://localhost:5173'
+const SERVER_BASE_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ??
+  (process.env.VERCEL ? '' : 'steam-achievement-wiki-local-development')
+const SESSION_COOKIE_NAME = 'steam_achievement_session'
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+let steamAppsCache = null
+const steamStoreDetailsCache = new Map()
+
 function sendJson(response, statusCode, data) {
   response.writeHead(statusCode, {
     'Access-Control-Allow-Origin': CLIENT_BASE_URL,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json; charset=utf-8',
   })
   response.end(JSON.stringify(data))
 }
 
-function redirect(response, url) {
+function redirect(response, url, headers = {}) {
   response.writeHead(302, {
     Location: url,
     'Access-Control-Allow-Origin': CLIENT_BASE_URL,
+    'Access-Control-Allow-Credentials': 'true',
+    ...headers,
   })
   response.end()
 }
@@ -473,6 +485,70 @@ function getSteamIdFromClaimedId(claimedId) {
   return match?.[1]
 }
 
+function createSessionToken(steamId) {
+  if (!SESSION_SECRET) {
+    return null
+  }
+
+  const expiresAt = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS
+  const payload = `${steamId}.${expiresAt}`
+  const signature = createHmac('sha256', SESSION_SECRET)
+    .update(payload)
+    .digest('base64url')
+
+  return `${payload}.${signature}`
+}
+
+function verifySessionToken(token) {
+  if (!SESSION_SECRET || !token) {
+    return null
+  }
+
+  const [steamId, expiresAtValue, providedSignature] = token.split('.')
+  const expiresAt = Number(expiresAtValue)
+
+  if (
+    !/^\d+$/.test(steamId ?? '') ||
+    !Number.isFinite(expiresAt) ||
+    expiresAt <= Math.floor(Date.now() / 1000) ||
+    !providedSignature
+  ) {
+    return null
+  }
+
+  const payload = `${steamId}.${expiresAt}`
+  const expectedSignature = createHmac('sha256', SESSION_SECRET)
+    .update(payload)
+    .digest('base64url')
+  const expectedBuffer = Buffer.from(expectedSignature)
+  const providedBuffer = Buffer.from(providedSignature)
+
+  if (
+    expectedBuffer.length !== providedBuffer.length ||
+    !timingSafeEqual(expectedBuffer, providedBuffer)
+  ) {
+    return null
+  }
+
+  return steamId
+}
+
+function getCookie(request, name) {
+  const cookieHeader = request.headers.cookie ?? ''
+  const cookies = cookieHeader.split(';').map((cookie) => cookie.trim())
+  const cookie = cookies.find((item) => item.startsWith(`${name}=`))
+
+  return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null
+}
+
+function createSessionCookie(token, maxAge = SESSION_MAX_AGE_SECONDS) {
+  const secure = SERVER_BASE_URL.startsWith('https://') ? '; Secure' : ''
+
+  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(
+    token,
+  )}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`
+}
+
 function handleSteamLogin(response) {
   const returnTo = `${SERVER_BASE_URL}/api/auth/steam/callback`
   const params = new URLSearchParams({
@@ -499,18 +575,58 @@ async function handleSteamCallback(requestUrl, response) {
       return
     }
 
-    redirect(response, `${CLIENT_BASE_URL}/login?steamid=${steamId}`)
+    const sessionToken = createSessionToken(steamId)
+
+    if (!sessionToken) {
+      redirect(response, `${CLIENT_BASE_URL}/login?error=session-config`)
+      return
+    }
+
+    redirect(response, `${CLIENT_BASE_URL}/login?connected=1`, {
+      'Set-Cookie': createSessionCookie(sessionToken),
+    })
   } catch {
     redirect(response, `${CLIENT_BASE_URL}/login?error=steam-auth`)
   }
 }
 
-async function handleSteamLibrary(requestUrl, response) {
-  const steamid = requestUrl.searchParams.get('steamid')
+function handleSteamSession(request, response) {
+  const token = getCookie(request, SESSION_COOKIE_NAME)
+  const steamId = verifySessionToken(token)
+
+  if (!steamId) {
+    sendJson(response, 401, { user: null })
+    return
+  }
+
+  sendJson(response, 200, { user: { steamId } })
+}
+
+function handleSteamLogout(response) {
+  sendJsonWithHeaders(response, 200, { ok: true }, {
+    'Set-Cookie': createSessionCookie('', 0),
+  })
+}
+
+function sendJsonWithHeaders(response, statusCode, data, headers) {
+  response.writeHead(statusCode, {
+    'Access-Control-Allow-Origin': CLIENT_BASE_URL,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json; charset=utf-8',
+    ...headers,
+  })
+  response.end(JSON.stringify(data))
+}
+
+async function handleSteamLibrary(request, response) {
+  const token = getCookie(request, SESSION_COOKIE_NAME)
+  const steamid = verifySessionToken(token)
   const key = getSteamApiKey()
 
-  if (!steamid || !/^\d+$/.test(steamid)) {
-    sendJson(response, 400, { message: 'A valid steamid is required.' })
+  if (!steamid) {
+    sendJson(response, 401, { message: 'Steam login is required.' })
     return
   }
 
@@ -546,16 +662,15 @@ async function handleSteamLibrary(requestUrl, response) {
   }
 }
 
-loadEnvFile()
-
-createServer((request, response) => {
+export async function handleSteamProxyRequest(request, response) {
   const requestUrl = new URL(request.url ?? '/', `http://${request.headers.host}`)
 
   if (request.method === 'OPTIONS') {
     response.writeHead(204, {
       'Access-Control-Allow-Origin': CLIENT_BASE_URL,
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
     })
     response.end()
     return
@@ -568,44 +683,66 @@ createServer((request, response) => {
 
   if (
     request.method === 'GET' &&
-    requestUrl.pathname === '/api/auth/steam/callback'
+    requestUrl.pathname === '/api/auth/session'
   ) {
-    void handleSteamCallback(requestUrl, response)
+    handleSteamSession(request, response)
     return
   }
 
-  if (request.method === 'GET' && requestUrl.pathname === '/api/steam/library') {
-    void handleSteamLibrary(requestUrl, response)
+  if (
+    request.method === 'POST' &&
+    requestUrl.pathname === '/api/auth/logout'
+  ) {
+    handleSteamLogout(response)
     return
+  }
+
+  if (
+    request.method === 'GET' &&
+    requestUrl.pathname === '/api/auth/steam/callback'
+  ) {
+    return handleSteamCallback(requestUrl, response)
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/steam/library') {
+    return handleSteamLibrary(request, response)
   }
 
   if (
     request.method === 'GET' &&
     requestUrl.pathname === '/api/steam/achievements'
   ) {
-    void handleSteamAchievements(requestUrl, response)
-    return
+    return handleSteamAchievements(requestUrl, response)
   }
 
   if (request.method === 'GET' && requestUrl.pathname === '/api/steam/apps') {
-    void handleSteamApps(requestUrl, response)
-    return
+    return handleSteamApps(requestUrl, response)
   }
 
   if (
     request.method === 'GET' &&
     requestUrl.pathname === '/api/steam/store-games'
   ) {
-    void handleSteamStoreGames(requestUrl, response)
-    return
+    return handleSteamStoreGames(requestUrl, response)
   }
 
   if (request.method === 'GET' && requestUrl.pathname === '/api/steam/game') {
-    void handleSteamGame(requestUrl, response)
-    return
+    return handleSteamGame(requestUrl, response)
   }
 
   sendJson(response, 404, { message: 'Not Found' })
-}).listen(PORT, () => {
-  console.log(`Steam proxy server running at http://localhost:${PORT}`)
-})
+}
+
+function startSteamProxyServer() {
+  createServer(handleSteamProxyRequest).listen(PORT, () => {
+    console.log(`Steam proxy server running at http://localhost:${PORT}`)
+  })
+}
+
+const executedFileUrl = process.argv[1]
+  ? pathToFileURL(resolve(process.argv[1])).href
+  : ''
+
+if (import.meta.url === executedFileUrl) {
+  startSteamProxyServer()
+}

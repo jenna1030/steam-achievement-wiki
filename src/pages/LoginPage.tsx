@@ -6,19 +6,22 @@ export function LoginPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const loginWithSteamId = useAuthStore((state) => state.loginWithSteamId)
+  const status = useAuthStore((state) => state.status)
+  const hydrate = useAuthStore((state) => state.hydrate)
   const error = searchParams.get('error')
+  const connected = searchParams.get('connected')
 
   useEffect(() => {
-    const steamId = searchParams.get('steamid')
-
-    if (!steamId) {
+    if (connected !== '1') {
       return
     }
 
-    loginWithSteamId(steamId)
-    navigate('/mypage', { replace: true })
-  }, [loginWithSteamId, navigate, searchParams])
+    void hydrate().then((sessionUser) => {
+      navigate(sessionUser ? '/mypage' : '/login?error=session', {
+        replace: true,
+      })
+    })
+  }, [connected, hydrate, navigate])
 
   return (
     <main className="page auth-page">
@@ -34,11 +37,15 @@ export function LoginPage() {
 
         {error && (
           <p className="auth-message">
-            Steam 로그인을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.
+            {error === 'session-config'
+              ? '서버 세션 환경변수가 설정되지 않았습니다.'
+              : 'Steam 로그인을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.'}
           </p>
         )}
 
-        {user ? (
+        {status === 'loading' || connected === '1' ? (
+          <p className="muted">Steam 로그인 상태를 확인하고 있습니다.</p>
+        ) : user ? (
           <div className="auth-actions">
             <p className="muted">현재 SteamID `{user.steamId}`로 로그인되어 있습니다.</p>
             <Link className="button-link" to="/mypage">

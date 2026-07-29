@@ -65,6 +65,14 @@ interface SteamLibraryResponse {
   games: SteamOwnedGame[]
 }
 
+export interface SteamSessionUser {
+  steamId: string
+}
+
+interface SteamSessionResponse {
+  user: SteamSessionUser | null
+}
+
 export async function fetchSteamGlobalAchievementPercentages(
   steamAppId: number,
 ) {
@@ -147,12 +155,43 @@ export async function fetchSteamGame(steamAppId: number) {
   return data.game
 }
 
-export async function fetchSteamLibrary(steamId: string) {
-  const response = await fetch(`/api/steam/library?steamid=${steamId}`)
+export async function fetchSteamLibrary() {
+  const response = await fetch('/api/steam/library', {
+    credentials: 'include',
+  })
 
   if (!response.ok) {
     throw new Error('Steam 라이브러리를 불러오지 못했습니다.')
   }
 
   return (await response.json()) as SteamLibraryResponse
+}
+
+export async function fetchSteamSession() {
+  const response = await fetch('/api/auth/session', {
+    credentials: 'include',
+  })
+
+  if (response.status === 401) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error('Steam 로그인 상태를 확인하지 못했습니다.')
+  }
+
+  const data = (await response.json()) as SteamSessionResponse
+
+  return data.user
+}
+
+export async function clearSteamSession() {
+  const response = await fetch('/api/auth/logout', {
+    method: 'POST',
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error('Steam 로그아웃을 완료하지 못했습니다.')
+  }
 }

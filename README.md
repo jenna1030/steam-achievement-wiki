@@ -1,71 +1,84 @@
 # Steam Achievement Wiki
 
-BCSD 프론트엔드 트랙 개인 프로젝트입니다. Steam 게임의 도전과제를 검색하고, 공략과 체크리스트를 함께 관리하는 위키형 웹 앱을 목표로 구현했습니다.
+BCSD 프론트엔드 트랙 개인 프로젝트입니다. Steam의 공식 게임·도전과제
+데이터와 사용자가 작성한 공략 메타데이터를 결합해, 도전과제 탐색부터 공략,
+난이도 투표, 체크리스트까지 한 흐름으로 관리합니다.
 
-## 주요 기능
+## 구현 기능
 
-- 게임 검색, 장르 필터, 관심 게임 등록
-- 게임별 도전과제 목록, 태그 필터, 정렬
-- 도전과제 상세 정보와 스포일러 단계별 공략
-- 사용자 공략 작성, 수정, 삭제
-- 도전과제 체크리스트, 진행 상태, 메모 저장
-- 난이도 투표와 달성률 차트
-- 쉬운 도전과제 추천
-- Steam 공개 API 일부 연동
+- Steam Store 게임 검색, 장르/도전과제 유무 필터, 무한 스크롤
+- 게임 상세 정보와 Steam 공식 도전과제·전체 달성률 조회
+- 도전과제 아이콘, 숨김 여부, 정렬, 태그 필터
+- 힌트/상세/스포일러 단계별 공략 작성·수정·삭제
+- 공략 기반 태그, DLC·멀티플레이·놓치기 쉬움·2회차 조건 표시
+- 난이도 투표 변경 및 취소
+- 이름·설명·아이콘 스냅샷을 보관하는 체크리스트
+- Steam OpenID 로그인과 공개 라이브러리 조회
+- 관심 게임, 최근 검색어, 공략, 투표, 체크리스트 브라우저 저장
 
-## Steam API 연동 범위
+## 데이터 경계
 
-Steam API Key가 필요한 요청은 브라우저에서 직접 호출하지 않고, 로컬 백엔드 프록시를 통해 호출합니다.
+| 데이터 | 출처 | 관리 방식 |
+| --- | --- | --- |
+| 게임·도전과제·달성률 | Steam API | TanStack Query 캐시 |
+| 로그인 상태 | Steam OpenID | 서버 검증 후 서명된 HttpOnly 쿠키 |
+| 관심 게임·공략·투표·체크리스트 | 사용자 브라우저 | Zustand + localStorage |
 
-- `ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002`
-  - 게임별 글로벌 도전과제 달성률 조회
-- `ISteamUserStats/GetSchemaForGame/v2`
-  - 도전과제 내부 이름, 표시 이름, 설명, 아이콘, 숨김 여부 조회
-  - `STEAM_API_KEY`가 필요하므로 `server/steamProxy.js`에서만 호출합니다.
+Steam API Key는 브라우저에 노출하지 않습니다. 로컬 Node 프록시와 Vercel
+Functions가 같은 서버 요청 처리기를 사용합니다.
+`VITE_` 접두사가 붙은 Steam API Key는 만들거나 참조하지 않습니다.
 
-프론트엔드는 `/api/steam/achievements?appid=...`만 호출합니다. 실제 `.env` 파일은 `.gitignore`에 포함되어 있어 커밋하지 않습니다.
+## 로컬 실행
 
-## 실행 방법
-
-`.env`에 Steam Web API Key를 넣습니다.
+`.env.example`을 참고해 루트에 `.env`를 만듭니다.
 
 ```env
 STEAM_API_KEY=발급받은_키
+SESSION_SECRET=충분히_긴_임의의_문자열
+CLIENT_BASE_URL=http://localhost:5173
+SERVER_BASE_URL=http://localhost:3001
+STEAM_PROXY_PORT=3001
 ```
-
-의존성을 설치합니다.
 
 ```bash
 npm install
 ```
 
-터미널 1에서 백엔드 프록시를 실행합니다.
+터미널 1:
 
 ```bash
 npm run dev:api
 ```
 
-터미널 2에서 Vite 개발 서버를 실행합니다.
+터미널 2:
 
 ```bash
 npm run dev
 ```
 
-개발 서버 실행 후 Vite가 출력하는 로컬 주소로 접속합니다.
+Steam 로그인은 두 서버가 모두 실행 중이어야 합니다.
 
-## 검증 명령어
+## 품질 검사
 
 ```bash
-npm run lint
-npm run build
+npm run check
 ```
 
-## 기술 스택
+`check`는 린트와 TypeScript/Vite 프로덕션 빌드를 차례로 실행합니다. GitHub
+Actions도 pull request와 `main` push에서 같은 명령을 실행합니다.
 
-- React
-- TypeScript
-- Vite
-- React Router
-- TanStack Query
-- Zustand
-- Recharts
+## 배포
+
+Vite 정적 앱과 `/api` Vercel Functions를 함께 배포할 수 있도록 구성되어
+있습니다. 환경변수와 Steam OpenID callback URL 설정은
+[배포 가이드](docs/deployment.md)를 따릅니다.
+
+## 현재 MVP의 한계
+
+- 공략·투표·체크리스트는 계정 서버가 아닌 현재 브라우저에만 저장됩니다.
+- 댓글, 공략 신뢰도, 계정 간 동기화는 후속 백엔드 범위입니다.
+- Steam 프로필 또는 게임 세부 정보가 비공개면 라이브러리를 조회할 수 없습니다.
+- Steam API가 제공하지 않는 DLC·플랫폼 조건은 공략 작성자가 보완합니다.
+
+발표 흐름과 기술 선택 근거는
+[발표 가이드](docs/presentation-guide.md)에 정리했습니다.

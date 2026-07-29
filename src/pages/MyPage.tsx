@@ -58,6 +58,7 @@ function sortLibraryGames(
 export function MyPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const authStatus = useAuthStore((state) => state.status)
   const logout = useAuthStore((state) => state.logout)
   const guideCount = useGuideStore((state) => state.userGuides.length)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -112,6 +113,14 @@ export function MyPage() {
     return () => observer.disconnect()
   }, [hasMoreGames, visibleGames.length])
 
+  if (authStatus !== 'ready') {
+    return (
+      <main className="page">
+        <LoadingState message="Steam 로그인 상태를 확인하는 중입니다." />
+      </main>
+    )
+  }
+
   if (!user) {
     return (
       <main className="page">
@@ -140,8 +149,7 @@ export function MyPage() {
           className="secondary-button"
           type="button"
           onClick={() => {
-            logout()
-            navigate('/login')
+            void logout().then(() => navigate('/login'))
           }}
         >
           로그아웃

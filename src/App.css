@@ -1179,6 +1179,16 @@ dd {
   text-align: center;
 }
 
+.fatal-error-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.fatal-error-page .empty-state {
+  width: min(100%, 720px);
+}
+
 .auth-page {
   display: grid;
   place-items: start center;
