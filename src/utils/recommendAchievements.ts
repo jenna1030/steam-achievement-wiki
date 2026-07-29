@@ -17,7 +17,11 @@ export function recommendEasyAchievements(
 
   return achievements
     .filter((achievement) => targetGameIds.includes(achievement.gameId))
-    .filter((achievement) => !achievement.requiresDlc && !achievement.requiresMultiplayer)
+    .filter(
+      (achievement) =>
+        achievement.dlcRequirement !== 'required' &&
+        achievement.multiplayerRequirement !== 'required',
+    )
     .map((achievement): RecommendedAchievementView => {
       const shortTimeBonus = achievement.estimatedMinutes > 0 && achievement.estimatedMinutes <= 30 ? 18 : 0
       const difficultyBonus = achievement.difficulty === 'easy' ? 20 : achievement.difficulty === 'normal' ? 10 : 0

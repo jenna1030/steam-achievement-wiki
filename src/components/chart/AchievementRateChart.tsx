@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import type { Achievement } from '../../types/achievement'
 import type { Game } from '../../types/game'
+import { getAchievementPath } from '../../utils/achievementIdentity'
 
 interface AchievementRateChartProps {
   achievements: Achievement[]
@@ -91,7 +92,7 @@ function RateChartBlock({
                 const item = (barData as { payload?: ChartAchievement }).payload
 
                 if (item) {
-                  navigate(`/achievements/${item.achievement.id}`, {
+                  navigate(getAchievementPath(item.achievement.id), {
                     state: { achievement: item.achievement },
                   })
                 }
@@ -105,7 +106,7 @@ function RateChartBlock({
           <Link
             key={item.achievement.id}
             state={{ achievement: item.achievement }}
-            to={`/achievements/${item.achievement.id}`}
+            to={getAchievementPath(item.achievement.id)}
           >
             <span>{item.achievement.title}</span>
             <small>{item.gameTitle}</small>

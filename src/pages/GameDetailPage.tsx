@@ -6,12 +6,14 @@ import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { useAchievementsQuery } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
+import { useGuideStore } from '../stores/guideStore'
 import type { AchievementSortOption } from '../types/achievement'
 import {
   filterAchievements,
-  getAchievementTags,
+  getAchievementFilterTags,
   sortAchievements,
 } from '../utils/achievementFilters'
+import { applyGuideMetadata } from '../utils/achievementMetadata'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
@@ -26,13 +28,28 @@ export function GameDetailPage() {
     isLoading: isGameLoading,
   } = useGameDetailQuery(gameIdNumber)
   const {
-    data: achievements = [],
+    data: steamAchievements = [],
     isError: isAchievementsError,
     isFetching: isAchievementsFetching,
     isLoading: isAchievementsLoading,
   } = useAchievementsQuery(gameIdNumber)
+  const userGuides = useGuideStore((state) => state.userGuides)
+  const achievements = useMemo(
+    () =>
+      steamAchievements.map((achievement) => {
+        const legacyId = String(achievement.legacyId ?? '')
+        const guide = userGuides.find(
+          (item) =>
+            item.achievementId === achievement.id ||
+            item.achievementId === legacyId,
+        )
+
+        return applyGuideMetadata(achievement, guide)
+      }),
+    [steamAchievements, userGuides],
+  )
   const achievementTags = useMemo(
-    () => getAchievementTags(achievements),
+    () => getAchievementFilterTags(achievements),
     [achievements],
   )
   const visibleAchievements = useMemo(() => {

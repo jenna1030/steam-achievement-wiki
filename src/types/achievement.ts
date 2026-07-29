@@ -1,4 +1,6 @@
 export type AchievementDifficulty = 'easy' | 'normal' | 'hard' | 'very-hard'
+export type AchievementId = string
+export type RequirementStatus = 'unknown' | 'required' | 'not-required'
 export type AchievementSortOption =
   | 'rate-desc'
   | 'rate-asc'
@@ -6,7 +8,8 @@ export type AchievementSortOption =
   | 'difficulty'
 
 export interface Achievement {
-  id: number
+  id: AchievementId
+  legacyId?: number
   gameId: number
   source?: 'curated' | 'steam'
   title: string
@@ -18,16 +21,16 @@ export interface Achievement {
   estimatedMinutes: number
   tags: string[]
   isHidden: boolean
-  isMissable: boolean
-  requiresSecondRun: boolean
-  requiresDlc: boolean
-  requiresMultiplayer: boolean
+  isMissable: boolean | null
+  requiresSecondRun: boolean | null
+  dlcRequirement: RequirementStatus
+  multiplayerRequirement: RequirementStatus
   platformNotes: string[]
   bugNotes: string[]
 }
 
 export interface RecommendedAchievement {
-  achievementId: number
+  achievementId: AchievementId
   title: string
   game: string
   rate: string

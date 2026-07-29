@@ -1,5 +1,9 @@
 import type { SteamAchievement } from '../apis/steamApi'
 import type { Achievement, AchievementDifficulty } from '../types/achievement'
+import {
+  createLegacyAchievementId,
+  createSteamAchievementId,
+} from './achievementIdentity'
 
 function getDifficultyFromPercent(percent: number): AchievementDifficulty {
   if (percent >= 50) {
@@ -23,7 +27,8 @@ function createSteamAchievement(
   index: number,
 ): Achievement {
   return {
-    id: gameId * 100000 + index,
+    id: createSteamAchievementId(gameId, steamAchievement.name),
+    legacyId: createLegacyAchievementId(gameId, index),
     gameId,
     source: 'steam',
     title: steamAchievement.displayName || steamAchievement.name,
@@ -37,10 +42,10 @@ function createSteamAchievement(
     estimatedMinutes: 0,
     tags: [],
     isHidden: steamAchievement.hidden === 1,
-    isMissable: false,
-    requiresSecondRun: false,
-    requiresDlc: false,
-    requiresMultiplayer: false,
+    isMissable: null,
+    requiresSecondRun: null,
+    dlcRequirement: 'unknown',
+    multiplayerRequirement: 'unknown',
     platformNotes: [],
     bugNotes: [],
   }

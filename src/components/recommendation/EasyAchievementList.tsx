@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { RecommendedAchievementView } from '../../utils/recommendAchievements'
+import { getAchievementPath } from '../../utils/achievementIdentity'
 
 interface EasyAchievementListProps {
   recommendations: RecommendedAchievementView[]
@@ -34,7 +35,7 @@ export function EasyAchievementList({
           <Link
             className="text-link"
             state={{ achievement }}
-            to={`/achievements/${achievement.id}`}
+            to={getAchievementPath(achievement.id)}
           >
             상세 보기
           </Link>

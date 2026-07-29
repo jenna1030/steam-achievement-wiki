@@ -1,18 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useChecklistStore } from '../stores/checklistStore'
 import type { ChecklistStatus } from '../types/checklist'
+import {
+  getAchievementPath,
+  getGameIdFromAchievementId,
+} from '../utils/achievementIdentity'
 
 const statusOptions: Array<{ value: ChecklistStatus; label: string }> = [
   { value: 'saved', label: '저장됨' },
   { value: 'in-progress', label: '진행 중' },
   { value: 'done', label: '완료' },
 ]
-
-const STEAM_ONLY_ID_UNIT = 100000
-
-function getGameIdFromAchievementId(achievementId: number) {
-  return Math.floor(achievementId / STEAM_ONLY_ID_UNIT)
-}
 
 export function ChecklistPage() {
   const items = useChecklistStore((state) => state.items)
@@ -50,17 +48,39 @@ export function ChecklistPage() {
       {items.length > 0 ? (
         <section className="achievement-list">
           {items.map((item) => {
-            const gameId = getGameIdFromAchievementId(item.achievementId)
+            const gameId =
+              item.gameId ?? getGameIdFromAchievementId(item.achievementId)
 
             return (
               <article className="checklist-card" key={item.achievementId}>
-                <div>
-                  <p>Steam App #{gameId}</p>
-                  <h3>도전과제 #{item.achievementId}</h3>
-                  <p className="muted">
-                    상세 페이지에서 Steam API 정보를 다시 불러와 이름과 설명을
-                    확인할 수 있습니다.
-                  </p>
+                <div className="checklist-achievement-summary">
+                  {item.iconUrl && (
+                    <img src={item.iconUrl} alt="" className="achievement-icon" />
+                  )}
+                  <div>
+                    <p>
+                      {gameId ? `Steam App #${gameId}` : 'Steam 도전과제'}
+                    </p>
+                    <h3>{item.title ?? `도전과제 #${item.achievementId}`}</h3>
+                    <p className="muted">
+                      {item.description ??
+                        '상세 페이지를 열면 최신 Steam 정보를 다시 불러옵니다.'}
+                    </p>
+                    {item.tags && (
+                      <div className="tag-row">
+                        {item.tags.map((tag) => (
+                          <span key={tag}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                    {item.notices && item.notices.length > 0 && (
+                      <div className="notice-row">
+                        {item.notices.map((notice) => (
+                          <span key={notice}>{notice}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="checklist-controls">
                   <label>
@@ -103,7 +123,7 @@ export function ChecklistPage() {
                   </button>
                   <Link
                     className="text-link"
-                    to={`/achievements/${item.achievementId}`}
+                    to={getAchievementPath(item.achievementId)}
                   >
                     상세 보기
                   </Link>

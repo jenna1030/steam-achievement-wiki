@@ -37,6 +37,19 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
   const selectedOption = spoilerOptions.find(
     (option) => option.level === selectedLevel,
   )
+  const guideTags = guide.tags.length > 0 ? guide.tags : ['태그 없음']
+  const guideNotices = [
+    guide.dlcRequirement === 'required' ? 'DLC 필요' : null,
+    guide.dlcRequirement === 'not-required' ? '본편만으로 가능' : null,
+    guide.multiplayerRequirement === 'required'
+      ? '멀티플레이 필요'
+      : null,
+    guide.multiplayerRequirement === 'not-required'
+      ? '싱글 플레이 가능'
+      : null,
+    guide.isMissable ? '놓치기 쉬움' : null,
+    guide.requiresSecondRun ? '2회차 필요' : null,
+  ].filter((notice): notice is string => Boolean(notice))
 
   return (
     <article className="guide-card">
@@ -56,6 +69,18 @@ export function SpoilerGuideTabs({ guide, onDelete }: SpoilerGuideTabsProps) {
           </div>
         </dl>
       </div>
+      <div className="tag-row">
+        {guideTags.map((tag) => (
+          <span key={tag}>{tag}</span>
+        ))}
+      </div>
+      {guideNotices.length > 0 && (
+        <div className="notice-row">
+          {guideNotices.map((notice) => (
+            <span key={notice}>{notice}</span>
+          ))}
+        </div>
+      )}
       {guide.source === 'user' && (
         <div className="guide-actions">
           <Link className="text-link" to={`/guides/new?guideId=${guide.id}`}>

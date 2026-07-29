@@ -11,7 +11,7 @@ const difficultyWeight: Record<AchievementDifficulty, number> = {
   'very-hard': 4,
 }
 
-export function getAchievementTags(achievements: Achievement[]) {
+export function getAchievementFilterTags(achievements: Achievement[]) {
   return Array.from(
     new Set(achievements.flatMap((achievement) => achievement.tags)),
   ).sort()

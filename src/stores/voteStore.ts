@@ -1,5 +1,7 @@
 import { create } from 'zustand'
+import type { AchievementId } from '../types/achievement'
 import type { DifficultyVote } from '../types/checklist'
+import { normalizeAchievementId } from '../utils/achievementIdentity'
 
 type VoteOption = 'easy' | 'normal' | 'hard' | 'veryHard'
 
@@ -7,11 +9,16 @@ const STORAGE_KEY = 'steam-achievement-wiki-votes'
 
 interface VoteState {
   votes: DifficultyVote[]
-  userVotes: Record<number, VoteOption>
-  vote: (achievementId: number, option: VoteOption) => void
+  userVotes: Record<AchievementId, VoteOption>
+  vote: (achievementId: AchievementId, option: VoteOption) => void
+  removeVote: (achievementId: AchievementId) => void
+  migrateAchievementId: (
+    legacyId: AchievementId,
+    achievementId: AchievementId,
+  ) => void
 }
 
-function loadStoredState() {
+function loadStoredState(): Pick<VoteState, 'votes' | 'userVotes'> {
   try {
     const rawState = window.localStorage.getItem(STORAGE_KEY)
 
@@ -19,14 +26,39 @@ function loadStoredState() {
       return { votes: [], userVotes: {} }
     }
 
-    return JSON.parse(rawState) as Pick<VoteState, 'votes' | 'userVotes'>
+    const storedState = JSON.parse(rawState) as Pick<
+      VoteState,
+      'votes' | 'userVotes'
+    >
+    const votes = Array.isArray(storedState.votes)
+      ? storedState.votes.map((vote) => ({
+          ...vote,
+          achievementId: normalizeAchievementId(vote.achievementId),
+        }))
+      : []
+
+    return { votes, userVotes: storedState.userVotes ?? {} }
   } catch {
     return { votes: [], userVotes: {} }
   }
 }
 
-function persistState(votes: DifficultyVote[], userVotes: Record<number, VoteOption>) {
+function persistState(
+  votes: DifficultyVote[],
+  userVotes: Record<AchievementId, VoteOption>,
+) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ votes, userVotes }))
+}
+
+function changeVoteCount(
+  vote: DifficultyVote,
+  option: VoteOption,
+  amount: 1 | -1,
+) {
+  return {
+    ...vote,
+    [option]: Math.max(0, vote[option] + amount),
+  }
 }
 
 export const useVoteStore = create<VoteState>((set) => {
@@ -39,7 +71,7 @@ export const useVoteStore = create<VoteState>((set) => {
       set((state) => {
         const previousVote = state.userVotes[achievementId]
 
-        if (previousVote) {
+        if (previousVote === option) {
           return state
         }
 
@@ -52,10 +84,11 @@ export const useVoteStore = create<VoteState>((set) => {
                 return voteItem
               }
 
-              return {
-                ...voteItem,
-                [option]: voteItem[option] + 1,
-              }
+              const withoutPreviousVote = previousVote
+                ? changeVoteCount(voteItem, previousVote, -1)
+                : voteItem
+
+              return changeVoteCount(withoutPreviousVote, option, 1)
             })
           : [
               ...state.votes,
@@ -69,6 +102,51 @@ export const useVoteStore = create<VoteState>((set) => {
             ]
         const userVotes = { ...state.userVotes, [achievementId]: option }
 
+        persistState(votes, userVotes)
+
+        return { votes, userVotes }
+      }),
+    removeVote: (achievementId) =>
+      set((state) => {
+        const previousVote = state.userVotes[achievementId]
+
+        if (!previousVote) {
+          return state
+        }
+
+        const votes = state.votes.map((voteItem) =>
+          voteItem.achievementId === achievementId
+            ? changeVoteCount(voteItem, previousVote, -1)
+            : voteItem,
+        )
+        const userVotes = { ...state.userVotes }
+
+        delete userVotes[achievementId]
+        persistState(votes, userVotes)
+
+        return { votes, userVotes }
+      }),
+    migrateAchievementId: (legacyId, achievementId) =>
+      set((state) => {
+        const hasLegacyVote =
+          state.votes.some((vote) => vote.achievementId === legacyId) ||
+          Boolean(state.userVotes[legacyId])
+
+        if (legacyId === achievementId || !hasLegacyVote) {
+          return state
+        }
+
+        const votes = state.votes.map((voteItem) =>
+          voteItem.achievementId === legacyId
+            ? { ...voteItem, achievementId }
+            : voteItem,
+        )
+        const userVotes = { ...state.userVotes }
+
+        if (userVotes[legacyId] && !userVotes[achievementId]) {
+          userVotes[achievementId] = userVotes[legacyId]
+        }
+        delete userVotes[legacyId]
         persistState(votes, userVotes)
 
         return { votes, userVotes }

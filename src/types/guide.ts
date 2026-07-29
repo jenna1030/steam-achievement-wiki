@@ -1,8 +1,13 @@
+import type {
+  AchievementId,
+  RequirementStatus,
+} from './achievement'
+
 export type SpoilerLevel = 'hint' | 'detail' | 'spoiler'
 
 export interface AchievementGuide {
   id: number
-  achievementId: number
+  achievementId: AchievementId
   source?: 'local' | 'user'
   title: string
   author: string
@@ -14,6 +19,11 @@ export interface AchievementGuide {
   supplies: string[]
   warnings: string[]
   recommendedOrder: string[]
+  tags: string[]
+  dlcRequirement: RequirementStatus
+  multiplayerRequirement: RequirementStatus
+  isMissable: boolean
+  requiresSecondRun: boolean
   difficulty: '쉬움' | '보통' | '어려움' | '매우 어려움'
   estimatedMinutes: number
   helpfulCount: number
@@ -31,7 +41,12 @@ export type GuideFormValues = Pick<
   | 'spoiler'
   | 'difficulty'
   | 'estimatedMinutes'
+  | 'dlcRequirement'
+  | 'multiplayerRequirement'
+  | 'isMissable'
+  | 'requiresSecondRun'
 > & {
+  tagsText: string
   conditionsText: string
   suppliesText: string
   warningsText: string

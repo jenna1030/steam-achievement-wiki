@@ -11,6 +11,12 @@ import { useGamesQuery } from '../hooks/useGamesQuery'
 import { useGuideStore } from '../stores/guideStore'
 import type { Achievement } from '../types/achievement'
 import type { GuideFormValues } from '../types/guide'
+import {
+  getAchievementPath,
+  getGameIdFromAchievementId,
+  matchesAchievementId,
+  normalizeAchievementId,
+} from '../utils/achievementIdentity'
 
 interface GuideEditorLocationState {
   achievement?: Achievement
@@ -21,8 +27,12 @@ export function GuideEditorPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const guideId = Number(searchParams.get('guideId'))
-  const achievementId = Number(searchParams.get('achievementId') ?? 103)
-  const [selectedGameId, setSelectedGameId] = useState(1)
+  const achievementId = normalizeAchievementId(
+    searchParams.get('achievementId') ?? '',
+  )
+  const [selectedGameId, setSelectedGameId] = useState(
+    getGameIdFromAchievementId(achievementId) ?? 1145350,
+  )
   const userGuides = useGuideStore((state) => state.userGuides)
   const addGuide = useGuideStore((state) => state.addGuide)
   const updateGuide = useGuideStore((state) => state.updateGuide)
@@ -45,7 +55,10 @@ export function GuideEditorPage() {
     isLoading: isAchievementsLoading,
   } = useAchievementsQuery(selectedGameId)
   const defaultAchievementFromState =
-    stateAchievement?.id === defaultAchievementId ? stateAchievement : undefined
+    stateAchievement &&
+    matchesAchievementId(stateAchievement, defaultAchievementId)
+      ? stateAchievement
+      : undefined
   const resolvedDefaultAchievement =
     defaultAchievement ?? defaultAchievementFromState
   const selectableAchievements =
@@ -70,19 +83,19 @@ export function GuideEditorPage() {
 
   const handleSubmit = (values: GuideFormValues) => {
     const selectedAchievement = selectableAchievements.find(
-      (achievement) => achievement.id === Number(values.achievementId),
+      (achievement) => achievement.id === values.achievementId,
     )
 
     if (editingGuide) {
       updateGuide(editingGuide.id, values)
-      navigate(`/achievements/${values.achievementId}`, {
+      navigate(getAchievementPath(values.achievementId), {
         state: { achievement: selectedAchievement },
       })
       return
     }
 
     const guide = addGuide(values)
-    navigate(`/achievements/${guide.achievementId}`, {
+    navigate(getAchievementPath(guide.achievementId), {
       state: { achievement: selectedAchievement },
     })
   }
@@ -97,7 +110,10 @@ export function GuideEditorPage() {
           페이지입니다.
         </p>
         {editingGuide && (
-          <Link className="text-link" to={`/achievements/${editingGuide.achievementId}`}>
+          <Link
+            className="text-link"
+            to={getAchievementPath(editingGuide.achievementId)}
+          >
             상세 페이지로 돌아가기
           </Link>
         )}

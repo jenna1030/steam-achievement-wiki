@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import type { Achievement } from '../../types/achievement'
+import type { Achievement, AchievementId } from '../../types/achievement'
 import type { Game } from '../../types/game'
 import type { AchievementGuide, GuideFormValues } from '../../types/guide'
 
 interface GuideFormProps {
   achievements: Achievement[]
-  defaultAchievementId: number
+  defaultAchievementId: AchievementId
   defaultGuide?: AchievementGuide
   games: Game[]
   selectedGameId: number
@@ -52,6 +52,12 @@ export function GuideForm({
       recommendedOrderText: defaultGuide
         ? joinLines(defaultGuide.recommendedOrder)
         : '',
+      tagsText: defaultGuide ? defaultGuide.tags.join(', ') : '',
+      dlcRequirement: defaultGuide?.dlcRequirement ?? 'unknown',
+      multiplayerRequirement:
+        defaultGuide?.multiplayerRequirement ?? 'unknown',
+      isMissable: defaultGuide?.isMissable ?? false,
+      requiresSecondRun: defaultGuide?.requiresSecondRun ?? false,
     },
   })
   const hasSpoiler = watch('hasSpoiler')
@@ -84,14 +90,14 @@ export function GuideForm({
   }, [achievementSearchQuery, achievements])
   const selectedGame = games.find((game) => game.id === selectedGameId)
   const selectedAchievement = achievements.find(
-    (achievement) => achievement.id === Number(selectedAchievementId),
+    (achievement) => achievement.id === selectedAchievementId,
   )
 
   useEffect(() => {
     if (
       achievements.length > 0 &&
       !achievements.some(
-        (achievement) => achievement.id === Number(selectedAchievementId),
+        (achievement) => achievement.id === selectedAchievementId,
       )
     ) {
       setValue('achievementId', achievements[0].id)
@@ -154,7 +160,7 @@ export function GuideForm({
           </label>
           <label>
             도전과제 선택
-            <select {...register('achievementId', { valueAsNumber: true })}>
+            <select {...register('achievementId')}>
               {filteredAchievements.map((achievement) => (
                 <option key={achievement.id} value={achievement.id}>
                   {achievement.title}
@@ -261,6 +267,54 @@ export function GuideForm({
           )}
         </label>
       </div>
+      <label>
+        공략 태그
+        <input
+          type="text"
+          placeholder="예: 보스, 놓치기 쉬움, 수집"
+          {...register('tagsText')}
+        />
+        <span className="form-note">
+          쉼표로 구분하면 도전과제 모아보기 카드에도 반영됩니다.
+        </span>
+      </label>
+      <section className="selection-panel" aria-label="필요 조건과 주의 표시">
+        <div className="section-heading">
+          <p className="eyebrow">Requirements</p>
+          <h2>필요 조건과 주의 표시</h2>
+          <p className="muted">
+            Steam API가 제공하지 않는 조건을 공략 작성자가 보완합니다.
+          </p>
+        </div>
+        <div className="form-grid">
+          <label>
+            DLC 조건
+            <select {...register('dlcRequirement')}>
+              <option value="unknown">확인되지 않음</option>
+              <option value="not-required">본편만으로 가능</option>
+              <option value="required">DLC 필요</option>
+            </select>
+          </label>
+          <label>
+            플레이 조건
+            <select {...register('multiplayerRequirement')}>
+              <option value="unknown">확인되지 않음</option>
+              <option value="not-required">싱글 플레이 가능</option>
+              <option value="required">멀티플레이 필요</option>
+            </select>
+          </label>
+        </div>
+        <div className="requirement-checks">
+          <label className="checkbox-label">
+            <input type="checkbox" {...register('isMissable')} />
+            놓치기 쉬움
+          </label>
+          <label className="checkbox-label">
+            <input type="checkbox" {...register('requiresSecondRun')} />
+            2회차 필요
+          </label>
+        </div>
+      </section>
       <label>
         달성 조건
         <textarea

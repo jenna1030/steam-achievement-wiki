@@ -1,5 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
 import type { Achievement } from '../../types/achievement'
+import { getAchievementPath } from '../../utils/achievementIdentity'
+import {
+  getAchievementNotices,
+  getAchievementTags,
+} from '../../utils/achievementMetadata'
 
 const difficultyLabel = {
   easy: '쉬움',
@@ -14,18 +19,9 @@ interface AchievementCardProps {
 
 export function AchievementCard({ achievement }: AchievementCardProps) {
   const navigate = useNavigate()
-  const detailUrl = `/achievements/${achievement.id}`
-  const displayTags = achievement.tags.length > 0 ? achievement.tags : ['태그 없음']
-  const noticeLabels = [
-    achievement.isHidden ? '숨겨짐' : null,
-    achievement.isMissable ? '놓치기 쉬움' : null,
-    achievement.requiresSecondRun ? '2회차 필요' : null,
-    achievement.requiresDlc ? 'DLC 필요' : null,
-    achievement.requiresMultiplayer ? '멀티플레이 필요' : null,
-  ].filter(
-    (label): label is string =>
-      Boolean(label) && !achievement.tags.includes(String(label)),
-  )
+  const detailUrl = getAchievementPath(achievement.id)
+  const displayTags = getAchievementTags(achievement)
+  const noticeLabels = getAchievementNotices(achievement)
   const openDetail = () => {
     navigate(detailUrl, { state: { achievement } })
   }

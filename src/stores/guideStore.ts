@@ -1,5 +1,7 @@
 import { create } from 'zustand'
+import type { AchievementId } from '../types/achievement'
 import type { AchievementGuide, GuideFormValues } from '../types/guide'
+import { normalizeAchievementId } from '../utils/achievementIdentity'
 
 const STORAGE_KEY = 'steam-achievement-wiki-guides'
 
@@ -8,6 +10,10 @@ interface GuideState {
   addGuide: (values: GuideFormValues) => AchievementGuide
   updateGuide: (guideId: number, values: GuideFormValues) => void
   deleteGuide: (guideId: number) => void
+  migrateAchievementId: (
+    legacyId: AchievementId,
+    achievementId: AchievementId,
+  ) => void
 }
 
 function parseLines(value: string) {
@@ -17,7 +23,19 @@ function parseLines(value: string) {
     .filter(Boolean)
 }
 
-function loadStoredGuides() {
+function normalizeStoredGuide(guide: AchievementGuide): AchievementGuide {
+  return {
+    ...guide,
+    achievementId: normalizeAchievementId(guide.achievementId),
+    tags: Array.isArray(guide.tags) ? guide.tags : [],
+    dlcRequirement: guide.dlcRequirement ?? 'unknown',
+    multiplayerRequirement: guide.multiplayerRequirement ?? 'unknown',
+    isMissable: guide.isMissable ?? false,
+    requiresSecondRun: guide.requiresSecondRun ?? false,
+  }
+}
+
+function loadStoredGuides(): AchievementGuide[] {
   try {
     const rawGuides = window.localStorage.getItem(STORAGE_KEY)
 
@@ -25,7 +43,9 @@ function loadStoredGuides() {
       return []
     }
 
-    return JSON.parse(rawGuides) as AchievementGuide[]
+    const guides = JSON.parse(rawGuides) as AchievementGuide[]
+
+    return Array.isArray(guides) ? guides.map(normalizeStoredGuide) : []
   } catch {
     return []
   }
@@ -43,7 +63,7 @@ function createGuideFromValues(
 
   return {
     id: guideId,
-    achievementId: Number(values.achievementId),
+    achievementId: normalizeAchievementId(values.achievementId),
     source: 'user',
     title: values.title,
     author: '나',
@@ -55,6 +75,11 @@ function createGuideFromValues(
     supplies: parseLines(values.suppliesText),
     warnings: parseLines(values.warningsText),
     recommendedOrder: parseLines(values.recommendedOrderText),
+    tags: parseLines(values.tagsText.replaceAll(',', '\n')),
+    dlcRequirement: values.dlcRequirement,
+    multiplayerRequirement: values.multiplayerRequirement,
+    isMissable: values.isMissable,
+    requiresSecondRun: values.requiresSecondRun,
     difficulty: values.difficulty,
     estimatedMinutes: Number(values.estimatedMinutes),
     helpfulCount: 0,
@@ -98,6 +123,27 @@ export const useGuideStore = create<GuideState>((set) => ({
   deleteGuide: (guideId) =>
     set((state) => {
       const userGuides = state.userGuides.filter((guide) => guide.id !== guideId)
+      persistGuides(userGuides)
+
+      return { userGuides }
+    }),
+  migrateAchievementId: (legacyId, achievementId) =>
+    set((state) => {
+      if (
+        legacyId === achievementId ||
+        !state.userGuides.some(
+          (guide) => guide.achievementId === legacyId,
+        )
+      ) {
+        return state
+      }
+
+      const userGuides = state.userGuides.map((guide) =>
+        guide.achievementId === legacyId
+          ? { ...guide, achievementId }
+          : guide,
+      )
+
       persistGuides(userGuides)
 
       return { userGuides }

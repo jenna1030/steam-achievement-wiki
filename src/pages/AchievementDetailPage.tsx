@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { AchievementMetaPanel } from '../components/achievement/AchievementMetaPanel'
 import { ChecklistButton } from '../components/checklist/ChecklistButton'
@@ -11,81 +12,114 @@ import {
   useAchievementGuidesQuery,
 } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
+import { useChecklistStore } from '../stores/checklistStore'
 import { useGuideStore } from '../stores/guideStore'
 import { useVoteStore } from '../stores/voteStore'
 import type { Achievement } from '../types/achievement'
+import {
+  getGameIdFromAchievementId,
+  matchesAchievementId,
+  normalizeAchievementId,
+} from '../utils/achievementIdentity'
+import {
+  applyGuideMetadata,
+  getAchievementNotices,
+  getAchievementTags,
+} from '../utils/achievementMetadata'
 
 interface AchievementLocationState {
   achievement?: Achievement
 }
 
-const STEAM_ONLY_ID_UNIT = 100000
-
-function getSteamOnlyGameId(achievementId: number) {
-  if (!Number.isFinite(achievementId) || achievementId < STEAM_ONLY_ID_UNIT) {
-    return Number.NaN
-  }
-
-  return Math.floor(achievementId / STEAM_ONLY_ID_UNIT)
-}
-
-function getDisplayTags(achievement: Achievement) {
-  return achievement.tags.length > 0 ? achievement.tags : ['태그 없음']
-}
-
-function getNoticeLabels(achievement: Achievement) {
-  return [
-    achievement.isHidden ? '숨겨진 도전과제' : null,
-    achievement.requiresDlc ? 'DLC 필요' : '본편만으로 가능',
-    achievement.requiresMultiplayer ? '멀티플레이 필요' : '싱글 플레이 가능',
-    achievement.isMissable ? '놓치기 쉬움' : '상시 도전 가능',
-    achievement.requiresSecondRun ? '2회차 필요' : '1회차 가능',
-  ].filter(
-    (label): label is string =>
-      Boolean(label) && !achievement.tags.includes(String(label)),
-  )
-}
-
 export function AchievementDetailPage() {
   const { achievementId } = useParams()
   const location = useLocation()
-  const achievementIdNumber = Number(achievementId)
+  const achievementIdValue = normalizeAchievementId(achievementId)
   const stateAchievement = (location.state as AchievementLocationState | null)
     ?.achievement
   const matchingStateAchievement =
-    stateAchievement?.id === achievementIdNumber ? stateAchievement : undefined
-  const inferredGameId = getSteamOnlyGameId(achievementIdNumber)
+    stateAchievement && matchesAchievementId(stateAchievement, achievementIdValue)
+      ? stateAchievement
+      : undefined
+  const inferredGameId = getGameIdFromAchievementId(achievementIdValue)
 
   const {
     data: queriedAchievement,
     isError: isAchievementError,
     isLoading: isAchievementLoading,
-  } = useAchievementDetailQuery(achievementIdNumber)
+  } = useAchievementDetailQuery(achievementIdValue)
   const lookupGameId =
     queriedAchievement?.gameId ?? matchingStateAchievement?.gameId ?? inferredGameId
   const {
     data: game,
     isLoading: isGameLoading,
-  } = useGameDetailQuery(lookupGameId)
+  } = useGameDetailQuery(lookupGameId ?? Number.NaN)
   const {
     data: relatedGuides = [],
     isLoading: isGuidesLoading,
-  } = useAchievementGuidesQuery(achievementIdNumber)
+  } = useAchievementGuidesQuery(achievementIdValue)
 
-  const achievement = queriedAchievement ?? matchingStateAchievement
-  const displayTags = achievement ? getDisplayTags(achievement) : []
-  const noticeLabels = achievement ? getNoticeLabels(achievement) : []
+  const rawAchievement = queriedAchievement ?? matchingStateAchievement
   const userGuides = useGuideStore((state) => state.userGuides)
   const deleteGuide = useGuideStore((state) => state.deleteGuide)
+  const migrateGuideAchievementId = useGuideStore(
+    (state) => state.migrateAchievementId,
+  )
+  const syncChecklistAchievement = useChecklistStore(
+    (state) => state.syncAchievement,
+  )
   const votes = useVoteStore((state) => state.votes)
+  const migrateVoteAchievementId = useVoteStore(
+    (state) => state.migrateAchievementId,
+  )
+  const legacyAchievementId = String(rawAchievement?.legacyId ?? '')
+  const localGuides = useMemo(
+    () =>
+      rawAchievement
+        ? userGuides.filter(
+            (guide) =>
+              guide.achievementId === rawAchievement.id ||
+              guide.achievementId === legacyAchievementId,
+          )
+        : [],
+    [legacyAchievementId, rawAchievement, userGuides],
+  )
+  const achievement = useMemo(
+    () =>
+      rawAchievement
+        ? applyGuideMetadata(rawAchievement, localGuides[0])
+        : undefined,
+    [localGuides, rawAchievement],
+  )
+  const displayTags = achievement ? getAchievementTags(achievement) : []
+  const noticeLabels = achievement ? getAchievementNotices(achievement) : []
   const combinedGuides = [
-    ...userGuides.filter((guide) => guide.achievementId === achievementIdNumber),
+    ...localGuides,
     ...relatedGuides,
   ]
   const isResolvingSteamAchievement =
     !achievement &&
-    Number.isFinite(inferredGameId) &&
+    inferredGameId !== null &&
     (isAchievementLoading || isGameLoading)
+
+  useEffect(() => {
+    if (!achievement) {
+      return
+    }
+
+    syncChecklistAchievement(achievement)
+
+    if (legacyAchievementId) {
+      migrateGuideAchievementId(legacyAchievementId, achievement.id)
+      migrateVoteAchievementId(legacyAchievementId, achievement.id)
+    }
+  }, [
+    achievement,
+    legacyAchievementId,
+    migrateGuideAchievementId,
+    migrateVoteAchievementId,
+    syncChecklistAchievement,
+  ])
 
   if (isAchievementLoading || isResolvingSteamAchievement) {
     return (
@@ -176,7 +210,7 @@ export function AchievementDetailPage() {
             있습니다.
           </p>
         </div>
-        <ChecklistButton achievementId={achievement.id} />
+        <ChecklistButton achievement={achievement} />
       </section>
 
       <DifficultyVote achievementId={achievement.id} />
@@ -213,7 +247,9 @@ export function AchievementDetailPage() {
             <Link
               className="button-link"
               state={{ achievement }}
-              to={`/guides/new?achievementId=${achievement.id}`}
+              to={`/guides/new?achievementId=${encodeURIComponent(
+                achievement.id,
+              )}`}
             >
               공략 작성하기
             </Link>
