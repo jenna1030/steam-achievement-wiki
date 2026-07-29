@@ -6,6 +6,7 @@ const PORT = Number(process.env.STEAM_PROXY_PORT ?? 3001)
 const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL ?? 'http://localhost:5173'
 const SERVER_BASE_URL = process.env.SERVER_BASE_URL ?? `http://localhost:${PORT}`
 let steamAppsCache = null
+const steamStoreDetailsCache = new Map()
 
 function loadEnvFile() {
   try {
@@ -135,24 +136,54 @@ function getFilteredApps(apps, query, limit) {
     .slice(0, limit)
 }
 
-function createSteamGame(app) {
+async function fetchSteamStoreDetails(appid) {
+  if (steamStoreDetailsCache.has(appid)) {
+    return steamStoreDetailsCache.get(appid)
+  }
+
+  const detailsUrl = new URL('https://store.steampowered.com/api/appdetails')
+  detailsUrl.searchParams.set('appids', String(appid))
+  detailsUrl.searchParams.set('l', 'koreana')
+  detailsUrl.searchParams.set('cc', 'kr')
+
+  const data = await fetchJson(detailsUrl)
+  const result = data?.[String(appid)]
+  const details = result?.success ? result.data : null
+
+  steamStoreDetailsCache.set(appid, details)
+
+  return details
+}
+
+function getStoreGenres(storeDetails) {
+  return (storeDetails?.genres ?? [])
+    .map((genre) => String(genre.description ?? '').trim())
+    .filter(Boolean)
+}
+
+function createSteamGame(app, storeDetails) {
   const appid = Number(app.appid)
+  const genres = getStoreGenres(storeDetails)
+  const achievementCount = Number(storeDetails?.achievements?.total ?? 0)
 
   return {
     id: appid,
     steamAppId: appid,
-    title: app.name,
+    title: storeDetails?.name ?? app.name,
     description:
-      'Steam 공식 앱 목록에서 가져온 게임입니다. 도전과제 목록과 전체 달성률은 Steam Web API로 불러옵니다.',
-    genre: 'Steam App',
-    developer: 'Steam 제공',
-    publisher: 'Steam 제공',
-    releaseDate: 'Steam API 기준',
-    image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
+      stripHtml(storeDetails?.short_description) ||
+      'Steam Store에서 게임 설명을 제공하지 않았습니다.',
+    genre: genres.join(', ') || '장르 정보 없음',
+    developer: (storeDetails?.developers ?? []).join(', ') || '정보 없음',
+    publisher: (storeDetails?.publishers ?? []).join(', ') || '정보 없음',
+    releaseDate: storeDetails?.release_date?.date || '정보 없음',
+    image:
+      storeDetails?.header_image ??
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
     storeUrl: `https://store.steampowered.com/app/${appid}`,
-    achievementCount: 0,
+    achievementCount,
     averageRate: 0,
-    hasAchievements: true,
+    hasAchievements: achievementCount > 0,
     isPopular: false,
   }
 }
@@ -202,6 +233,41 @@ function parseStoreSearchResults(resultsHtml) {
     .filter(Boolean)
 }
 
+async function enrichSteamStoreGames(apps) {
+  const enrichedApps = []
+  const batchSize = 8
+
+  for (let index = 0; index < apps.length; index += batchSize) {
+    const batch = apps.slice(index, index + batchSize)
+    const results = await Promise.all(
+      batch.map(async (app) => {
+        try {
+          const details = await fetchSteamStoreDetails(app.appid)
+          const genres = getStoreGenres(details)
+
+          return {
+            ...app,
+            image: details?.header_image ?? app.image,
+            releaseDate: details?.release_date?.date || app.releaseDate,
+            genres,
+            hasAchievements: Number(details?.achievements?.total ?? 0) > 0,
+          }
+        } catch {
+          return {
+            ...app,
+            genres: [],
+            hasAchievements: false,
+          }
+        }
+      }),
+    )
+
+    enrichedApps.push(...results)
+  }
+
+  return enrichedApps
+}
+
 async function handleSteamStoreGames(requestUrl, response) {
   const query = requestUrl.searchParams.get('query') ?? ''
   const start = Math.max(Number(requestUrl.searchParams.get('start') ?? 0), 0)
@@ -220,7 +286,8 @@ async function handleSteamStoreGames(requestUrl, response) {
 
   try {
     const data = await fetchJson(storeUrl)
-    const apps = parseStoreSearchResults(data?.results_html)
+    const parsedApps = parseStoreSearchResults(data?.results_html).slice(0, count)
+    const apps = await enrichSteamStoreGames(parsedApps)
 
     sendJson(response, 200, {
       apps,
@@ -301,21 +368,23 @@ async function handleSteamGame(requestUrl, response) {
     return
   }
 
-  if (!key) {
-    sendJson(response, 500, { message: 'STEAM_API_KEY is missing.' })
-    return
-  }
-
   try {
-    const apps = await fetchSteamApps(key)
-    const app = apps.find((target) => Number(target.appid) === Number(appid))
+    const storeDetails = await fetchSteamStoreDetails(Number(appid))
+    let app = storeDetails
+      ? { appid: Number(appid), name: storeDetails.name }
+      : null
+
+    if (!app && key) {
+      const apps = await fetchSteamApps(key)
+      app = apps.find((target) => Number(target.appid) === Number(appid))
+    }
 
     if (!app) {
       sendJson(response, 404, { message: 'Steam app was not found.' })
       return
     }
 
-    sendJson(response, 200, { game: createSteamGame(app) })
+    sendJson(response, 200, { game: createSteamGame(app, storeDetails) })
   } catch (error) {
     sendJson(response, 502, {
       message:

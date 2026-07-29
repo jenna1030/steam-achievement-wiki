@@ -96,6 +96,22 @@ export function GameDetailPage() {
           <p className="muted">{game.description}</p>
           <dl>
             <div>
+              <dt>장르</dt>
+              <dd>{game.genre}</dd>
+            </div>
+            <div>
+              <dt>출시일</dt>
+              <dd>{game.releaseDate}</dd>
+            </div>
+            <div>
+              <dt>개발사</dt>
+              <dd>{game.developer}</dd>
+            </div>
+            <div>
+              <dt>배급사</dt>
+              <dd>{game.publisher}</dd>
+            </div>
+            <div>
               <dt>도전과제</dt>
               <dd>{achievements.length}개</dd>
             </div>

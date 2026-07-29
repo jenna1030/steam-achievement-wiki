@@ -23,6 +23,8 @@ export interface SteamStoreGame {
   name: string
   image: string
   releaseDate: string
+  genres: string[]
+  hasAchievements: boolean
 }
 
 export interface SteamOwnedGame {
