@@ -63,7 +63,13 @@ Preview 주소를 `CLIENT_BASE_URL`, `SERVER_BASE_URL`에 함께 설정해야 �
 5. 마이페이지에서 공개 라이브러리를 조회한다.
 6. 브라우저 개발자 도구에서 `STEAM_API_KEY`가 요청 URL이나 번들에 없는지
    확인한다.
-7. `npm audit`의 React Router RSC 권고와 수정 버전 게시 여부를 다시 확인한다.
+7. 같은 Steam API 경로를 짧은 시간에 반복 호출해 `429`와 `Retry-After`가
+   반환되는지 확인한다.
+8. `npm audit`의 React Router RSC 권고와 수정 버전 게시 여부를 다시 확인한다.
+
+현재 레이트 리밋은 IP·라우트별 1분 창을 사용하는 인스턴스 메모리 기반
+안전장치다. Vercel 인스턴스 전체에 공통으로 적용해야 하는 운영 규모에서는
+Upstash Redis나 Vercel WAF처럼 공유 상태를 사용하는 방식으로 교체한다.
 
 ## 5. Git 배포 흐름
 
@@ -73,7 +79,7 @@ Preview 주소를 `CLIENT_BASE_URL`, `SERVER_BASE_URL`에 함께 설정해야 �
 ```text
 feature branch
   -> pull request
-  -> GitHub Actions: lint + build
+  -> GitHub Actions: lint + Vitest + strict build
   -> Vercel Preview
   -> main merge
   -> Vercel Production

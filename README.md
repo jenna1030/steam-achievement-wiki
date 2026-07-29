@@ -7,6 +7,7 @@ BCSD 프론트엔드 트랙 개인 프로젝트입니다. Steam의 공식 게임
 ## 구현 기능
 
 - Steam Store 게임 검색, 장르/도전과제 유무 필터, 무한 스크롤
+- 게임 검색과 같은 Steam Store 검색 어댑터를 재사용하는 공략 대상 검색
 - 게임 상세 정보와 Steam 공식 도전과제·전체 달성률 조회
 - 도전과제 아이콘, 숨김 여부, 정렬, 태그 필터
 - 힌트/상세/스포일러 단계별 공략 작성·수정·삭제
@@ -14,7 +15,8 @@ BCSD 프론트엔드 트랙 개인 프로젝트입니다. Steam의 공식 게임
 - 난이도 투표 변경 및 취소
 - 이름·설명·아이콘 스냅샷을 보관하는 체크리스트
 - Steam OpenID 로그인과 공개 라이브러리 조회
-- 관심 게임, 최근 검색어, 공략, 투표, 체크리스트 브라우저 저장
+- SteamID별 공략 분리와 관심 게임·최근 검색어·투표·체크리스트 브라우저 저장
+- 관심 게임 우선 홈 추천, 마이페이지 도전과제 기록 선택 집계
 
 ## 데이터 경계
 
@@ -22,7 +24,8 @@ BCSD 프론트엔드 트랙 개인 프로젝트입니다. Steam의 공식 게임
 | --- | --- | --- |
 | 게임·도전과제·달성률 | Steam API | TanStack Query 캐시 |
 | 로그인 상태 | Steam OpenID | 서버 검증 후 서명된 HttpOnly 쿠키 |
-| 관심 게임·공략·투표·체크리스트 | 사용자 브라우저 | Zustand + localStorage |
+| 관심 게임·투표·체크리스트 | 사용자 브라우저 | Zustand + localStorage |
+| 공략 | 사용자 브라우저 | `ownerSteamId`로 분리한 Zustand + localStorage |
 
 Steam API Key는 브라우저에 노출하지 않습니다. 로컬 Node 프록시와 Vercel
 Functions가 같은 서버 요청 처리기를 사용합니다.
@@ -64,8 +67,9 @@ Steam 로그인은 두 서버가 모두 실행 중이어야 합니다.
 npm run check
 ```
 
-`check`는 린트와 TypeScript/Vite 프로덕션 빌드를 차례로 실행합니다. GitHub
-Actions도 pull request와 `main` push에서 같은 명령을 실행합니다.
+`check`는 린트, Vitest 자동 테스트, strict TypeScript 검사와 Vite 프로덕션
+빌드를 차례로 실행합니다. GitHub Actions도 pull request와 `main` push에서
+같은 명령을 실행합니다.
 
 ## 배포
 
@@ -76,9 +80,11 @@ Vite 정적 앱과 `/api` Vercel Functions를 함께 배포할 수 있도록 구
 ## 현재 MVP의 한계
 
 - 공략·투표·체크리스트는 계정 서버가 아닌 현재 브라우저에만 저장됩니다.
+- 공략은 SteamID별로 분리되지만 다른 기기나 브라우저로 동기화되지는 않습니다.
 - 댓글, 공략 신뢰도, 계정 간 동기화는 후속 백엔드 범위입니다.
 - Steam 프로필 또는 게임 세부 정보가 비공개면 라이브러리를 조회할 수 없습니다.
 - Steam API가 제공하지 않는 DLC·플랫폼 조건은 공략 작성자가 보완합니다.
+- 현재 레이트 리밋은 서버 인스턴스 메모리 기반의 MVP 안전장치입니다.
 
 발표 흐름과 기술 선택 근거는
 [발표 가이드](docs/presentation-guide.md)에 정리했습니다.
