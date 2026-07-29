@@ -47,7 +47,6 @@ const LIBRARY_CACHE_MS = 1000 * 60 * 10
 const PLAYER_ACHIEVEMENT_CACHE_MS = 1000 * 60 * 15
 const ACHIEVEMENT_OVERVIEW_PAGE_SIZE = 20
 const ACHIEVEMENT_REQUEST_CONCURRENCY = 5
-let steamAppsCache = null
 let steamPopularTagsCache = null
 const steamStoreDetailsCache = new Map()
 const steamProfileCache = new Map()
@@ -168,35 +167,6 @@ function mergeAchievements(schemaAchievements, percentageAchievements) {
 
 function getSteamApiKey() {
   return process.env.STEAM_API_KEY
-}
-
-function getFilteredApps(apps, query, limit) {
-  const normalizedQuery = query.trim().toLowerCase()
-
-  if (!normalizedQuery) {
-    return []
-  }
-
-  return apps
-    .filter((app) => {
-      const name = String(app.name ?? '').toLowerCase()
-      const appid = String(app.appid ?? '')
-
-      return name.includes(normalizedQuery) || appid.includes(normalizedQuery)
-    })
-    .sort((a, b) => {
-      const aName = String(a.name ?? '').toLowerCase()
-      const bName = String(b.name ?? '').toLowerCase()
-      const aStartsWithQuery = aName.startsWith(normalizedQuery)
-      const bStartsWithQuery = bName.startsWith(normalizedQuery)
-
-      if (aStartsWithQuery !== bStartsWithQuery) {
-        return aStartsWithQuery ? -1 : 1
-      }
-
-      return aName.length - bName.length
-    })
-    .slice(0, limit)
 }
 
 async function fetchSteamStoreDetails(appid) {
@@ -322,6 +292,38 @@ function parseStoreSearchResults(resultsHtml) {
     .filter(Boolean)
 }
 
+async function fetchSteamStoreSearchPage({
+  query,
+  start,
+  count,
+  filter = '',
+  tagId,
+}) {
+  const storeUrl = new URL('https://store.steampowered.com/search/results/')
+
+  storeUrl.searchParams.set('query', query)
+  storeUrl.searchParams.set('term', query)
+  storeUrl.searchParams.set('start', String(start))
+  storeUrl.searchParams.set('count', String(count))
+  storeUrl.searchParams.set('dynamic_data', '')
+  storeUrl.searchParams.set('filter', filter)
+  storeUrl.searchParams.set('category1', '998')
+  storeUrl.searchParams.set('infinite', '1')
+  storeUrl.searchParams.set('l', 'koreana')
+  storeUrl.searchParams.set('cc', 'kr')
+
+  if (tagId) {
+    storeUrl.searchParams.set('tags', String(tagId))
+  }
+
+  const data = await fetchJson(storeUrl)
+
+  return {
+    apps: parseStoreSearchResults(data?.results_html).slice(0, count),
+    totalCount: Number(data?.total_count ?? 0),
+  }
+}
+
 async function enrichSteamStoreGames(apps, tagNameById) {
   const enrichedApps = []
   const batchSize = 8
@@ -370,18 +372,6 @@ async function handleSteamStoreGames(requestUrl, response) {
   const count = Math.min(Number(requestUrl.searchParams.get('count') ?? 20), 50)
   const filter = requestUrl.searchParams.get('filter') ?? 'globaltopsellers'
   const selectedTagName = requestUrl.searchParams.get('tag')?.trim() ?? ''
-  const storeUrl = new URL('https://store.steampowered.com/search/results/')
-
-  storeUrl.searchParams.set('query', query)
-  storeUrl.searchParams.set('term', query)
-  storeUrl.searchParams.set('start', String(start))
-  storeUrl.searchParams.set('count', String(count))
-  storeUrl.searchParams.set('dynamic_data', '')
-  storeUrl.searchParams.set('filter', filter)
-  storeUrl.searchParams.set('category1', '998')
-  storeUrl.searchParams.set('infinite', '1')
-  storeUrl.searchParams.set('l', 'koreana')
-  storeUrl.searchParams.set('cc', 'kr')
 
   try {
     const popularTags = await fetchSteamPopularTags()
@@ -394,20 +384,21 @@ async function handleSteamStoreGames(requestUrl, response) {
         selectedTagName.toLocaleLowerCase('ko'),
     )
 
-    if (selectedTag) {
-      storeUrl.searchParams.set('tags', String(selectedTag.id))
-    }
-
-    const data = await fetchJson(storeUrl)
-    const parsedApps = parseStoreSearchResults(data?.results_html).slice(0, count)
-    const apps = await enrichSteamStoreGames(parsedApps, tagNameById)
+    const searchPage = await fetchSteamStoreSearchPage({
+      query,
+      start,
+      count,
+      filter,
+      tagId: selectedTag?.id,
+    })
+    const apps = await enrichSteamStoreGames(searchPage.apps, tagNameById)
 
     sendJson(response, 200, {
       apps,
       tagCatalog: popularTags.map((tag) => tag.name),
       start,
       count,
-      totalCount: Number(data?.total_count ?? apps.length),
+      totalCount: searchPage.totalCount || apps.length,
     })
   } catch (error) {
     sendJson(response, 502, {
@@ -419,49 +410,28 @@ async function handleSteamStoreGames(requestUrl, response) {
   }
 }
 
-async function fetchSteamApps(key) {
-  if (steamAppsCache) {
-    return steamAppsCache
-  }
-
-  const appsUrl = new URL(
-    'https://api.steampowered.com/IStoreService/GetAppList/v1/',
-  )
-  appsUrl.searchParams.set('key', key)
-  appsUrl.searchParams.set('include_games', 'true')
-  appsUrl.searchParams.set('include_dlc', 'false')
-  appsUrl.searchParams.set('include_software', 'false')
-  appsUrl.searchParams.set('include_videos', 'false')
-  appsUrl.searchParams.set('include_hardware', 'false')
-  appsUrl.searchParams.set('max_results', '50000')
-
-  const data = await fetchJson(appsUrl)
-  steamAppsCache = data?.response?.apps ?? []
-
-  return steamAppsCache
-}
-
 async function handleSteamApps(requestUrl, response) {
   const query = requestUrl.searchParams.get('query') ?? ''
   const limit = Math.min(Number(requestUrl.searchParams.get('limit') ?? 30), 30)
-  const key = getSteamApiKey()
 
   if (query.trim().length < 2) {
     sendJson(response, 200, { apps: [] })
     return
   }
 
-  if (!key) {
-    sendJson(response, 500, { message: 'STEAM_API_KEY is missing.' })
-    return
-  }
-
   try {
-    const apps = await fetchSteamApps(key)
+    const searchPage = await fetchSteamStoreSearchPage({
+      query,
+      start: 0,
+      count: limit,
+    })
 
     sendJson(response, 200, {
-      apps: getFilteredApps(apps, query, limit),
-      totalCached: apps.length,
+      apps: searchPage.apps.map((app) => ({
+        appid: app.appid,
+        name: app.name,
+      })),
+      totalCount: searchPage.totalCount,
     })
   } catch (error) {
     sendJson(response, 502, {
