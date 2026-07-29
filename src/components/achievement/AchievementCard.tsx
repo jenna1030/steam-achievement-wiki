@@ -43,22 +43,30 @@ export function AchievementCard({ achievement }: AchievementCardProps) {
         }
       }}
     >
-      <div>
-        <p>{difficultyLabel[achievement.difficulty]}</p>
-        <h3>{achievement.title}</h3>
-        <p className="muted">{achievement.description}</p>
-        <div className="tag-row">
-          {displayTags.map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
-        {noticeLabels.length > 0 && (
-          <div className="notice-row">
-            {noticeLabels.map((label) => (
-              <span key={label}>{label}</span>
+      <div className="achievement-card-main">
+        <img
+          className="achievement-icon"
+          src={achievement.iconUrl}
+          alt=""
+          loading="lazy"
+        />
+        <div>
+          <p>{difficultyLabel[achievement.difficulty]}</p>
+          <h3>{achievement.title}</h3>
+          <p className="muted">{achievement.description}</p>
+          <div className="tag-row">
+            {displayTags.map((tag) => (
+              <span key={tag}>{tag}</span>
             ))}
           </div>
-        )}
+          {noticeLabels.length > 0 && (
+            <div className="notice-row">
+              {noticeLabels.map((label) => (
+                <span key={label}>{label}</span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <dl>
         <div>

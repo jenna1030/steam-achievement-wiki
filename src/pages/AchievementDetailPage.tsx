@@ -1,22 +1,19 @@
-import { useMemo } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { AchievementMetaPanel } from '../components/achievement/AchievementMetaPanel'
 import { ChecklistButton } from '../components/checklist/ChecklistButton'
 import { DifficultyVoteChart } from '../components/chart/DifficultyVoteChart'
+import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { SpoilerGuideTabs } from '../components/guide/SpoilerGuideTabs'
 import { DifficultyVote } from '../components/vote/DifficultyVote'
 import {
   useAchievementDetailQuery,
   useAchievementGuidesQuery,
-  useAchievementsQuery,
 } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
-import { useSteamAchievementPercentagesQuery } from '../hooks/useSteamAchievementPercentagesQuery'
 import { useGuideStore } from '../stores/guideStore'
 import { useVoteStore } from '../stores/voteStore'
 import type { Achievement } from '../types/achievement'
-import { mergeSteamAchievements } from '../utils/steamAchievements'
 
 interface AchievementLocationState {
   achievement?: Achievement
@@ -61,6 +58,7 @@ export function AchievementDetailPage() {
 
   const {
     data: queriedAchievement,
+    isError: isAchievementError,
     isLoading: isAchievementLoading,
   } = useAchievementDetailQuery(achievementIdNumber)
   const lookupGameId =
@@ -70,30 +68,11 @@ export function AchievementDetailPage() {
     isLoading: isGameLoading,
   } = useGameDetailQuery(lookupGameId)
   const {
-    data: gameAchievements = [],
-    isLoading: isGameAchievementsLoading,
-  } = useAchievementsQuery(lookupGameId)
-  const {
-    data: steamAchievements = [],
-    isFetching: isSteamFetching,
-  } = useSteamAchievementPercentagesQuery(game?.steamAppId ?? Number.NaN)
-  const {
     data: relatedGuides = [],
     isLoading: isGuidesLoading,
   } = useAchievementGuidesQuery(achievementIdNumber)
 
-  const mergedAchievements = useMemo(() => {
-    if (!Number.isFinite(lookupGameId)) {
-      return []
-    }
-
-    return mergeSteamAchievements(gameAchievements, steamAchievements, lookupGameId)
-  }, [gameAchievements, lookupGameId, steamAchievements])
-  const fallbackAchievement = mergedAchievements.find(
-    (achievement) => achievement.id === achievementIdNumber,
-  )
-  const achievement =
-    queriedAchievement ?? matchingStateAchievement ?? fallbackAchievement
+  const achievement = queriedAchievement ?? matchingStateAchievement
   const displayTags = achievement ? getDisplayTags(achievement) : []
   const noticeLabels = achievement ? getNoticeLabels(achievement) : []
   const userGuides = useGuideStore((state) => state.userGuides)
@@ -106,12 +85,23 @@ export function AchievementDetailPage() {
   const isResolvingSteamAchievement =
     !achievement &&
     Number.isFinite(inferredGameId) &&
-    (isGameLoading || isGameAchievementsLoading || isSteamFetching)
+    (isAchievementLoading || isGameLoading)
 
   if (isAchievementLoading || isResolvingSteamAchievement) {
     return (
       <main className="page">
         <LoadingState message="도전과제 정보를 불러오는 중입니다." />
+      </main>
+    )
+  }
+
+  if (isAchievementError) {
+    return (
+      <main className="page">
+        <ErrorState
+          message="Steam API에서 도전과제 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요."
+          title="도전과제를 불러오지 못했습니다."
+        />
       </main>
     )
   }
@@ -145,8 +135,17 @@ export function AchievementDetailPage() {
     <main className="page">
       <section className="page-header achievement-detail-header">
         <p className="eyebrow">{game?.title ?? 'Achievement'}</p>
-        <h1>{achievement.title}</h1>
-        <p className="muted">{achievement.description}</p>
+        <div className="achievement-title-row">
+          <img
+            className="achievement-detail-icon"
+            src={achievement.iconUrl}
+            alt=""
+          />
+          <div>
+            <h1>{achievement.title}</h1>
+            <p className="muted">{achievement.description}</p>
+          </div>
+        </div>
         <div className="achievement-detail-badges">
           {displayTags.map((tag) => (
             <span className="tag-badge" key={tag}>

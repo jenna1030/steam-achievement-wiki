@@ -818,6 +818,43 @@ dd {
   padding: 18px;
 }
 
+.achievement-card-main {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.achievement-icon,
+.achievement-detail-icon {
+  display: block;
+  object-fit: cover;
+  background: var(--color-navy-deep);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+}
+
+.achievement-icon {
+  width: 72px;
+  height: 72px;
+}
+
+.achievement-title-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.achievement-detail-icon {
+  width: 96px;
+  height: 96px;
+}
+
+.achievement-title-row h1 {
+  margin-bottom: 12px;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;
@@ -1636,6 +1673,15 @@ button:hover,
     grid-template-columns: 1fr;
   }
 
+  .achievement-card-main {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .achievement-icon {
+    width: 64px;
+    height: 64px;
+  }
+
   .rate-rank-list a {
     grid-template-columns: 1fr;
   }
@@ -1649,5 +1695,15 @@ button:hover,
 
   .search-row {
     grid-template-columns: 1fr;
+  }
+
+  .achievement-title-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .achievement-detail-icon {
+    width: 72px;
+    height: 72px;
   }
 }
