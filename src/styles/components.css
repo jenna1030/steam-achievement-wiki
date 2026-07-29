@@ -890,6 +890,31 @@ dd {
   border-radius: 999px;
 }
 
+.achievement-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.achievement-card-badges span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  color: var(--color-paper);
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 999px;
+}
+
+.achievement-card-badges .tag-card-badge {
+  background: var(--color-gold);
+}
+
+.achievement-card-badges .notice-card-badge {
+  background: var(--color-red);
+}
+
 .roadmap {
   margin: 42px clamp(20px, 5vw, 72px) 72px;
 }

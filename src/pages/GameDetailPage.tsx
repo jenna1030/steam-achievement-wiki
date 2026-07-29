@@ -5,10 +5,12 @@ import { AchievementFilterBar } from '../components/achievement/AchievementFilte
 import { CompletionBadge } from '../components/common/CompletionBadge'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
+import { getExampleGuidesForAchievement } from '../data/exampleGuides'
 import { useAchievementsQuery } from '../hooks/useAchievementsQuery'
 import { useGameDetailQuery } from '../hooks/useGameDetailQuery'
 import { useSteamPlayerAchievementsQuery } from '../hooks/useSteamPlayerAchievementsQuery'
 import { useAuthStore } from '../stores/authStore'
+import { useGuideFeedbackStore } from '../stores/guideFeedbackStore'
 import { useGuideStore } from '../stores/guideStore'
 import type { AchievementSortOption } from '../types/achievement'
 import {
@@ -18,6 +20,7 @@ import {
 } from '../utils/achievementFilters'
 import { applyGuideMetadata } from '../utils/achievementMetadata'
 import { isGuideOwnedBy } from '../utils/guideOwnership'
+import { selectMostLikedGuide } from '../utils/guideRanking'
 
 export function GameDetailPage() {
   const { gameId } = useParams()
@@ -53,20 +56,30 @@ export function GameDetailPage() {
     [playerProgress?.achievements],
   )
   const userGuides = useGuideStore((state) => state.userGuides)
+  const guideReactions = useGuideFeedbackStore((state) => state.reactions)
   const achievements = useMemo(
     () =>
       steamAchievements.map((achievement) => {
         const legacyId = String(achievement.legacyId ?? '')
-        const guide = userGuides.find(
+        const localGuides = userGuides.filter(
           (item) =>
             isGuideOwnedBy(item, user?.steamId) &&
             (item.achievementId === achievement.id ||
               item.achievementId === legacyId),
         )
+        const exampleGuides = getExampleGuidesForAchievement(
+          achievement.id,
+          legacyId,
+        )
+        const guide = selectMostLikedGuide(
+          [...localGuides, ...exampleGuides],
+          guideReactions,
+          user?.steamId ?? null,
+        )
 
         return applyGuideMetadata(achievement, guide)
       }),
-    [steamAchievements, user?.steamId, userGuides],
+    [guideReactions, steamAchievements, user?.steamId, userGuides],
   )
   const achievementTags = useMemo(
     () => getAchievementFilterTags(achievements),

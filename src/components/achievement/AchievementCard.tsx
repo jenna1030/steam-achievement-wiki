@@ -71,18 +71,18 @@ export function AchievementCard({
           <p>{difficultyLabel[achievement.difficulty]}</p>
           <h3>{achievement.title}</h3>
           <p className="muted">{achievement.description}</p>
-          <div className="tag-row">
+          <div className="achievement-card-badges">
             {displayTags.map((tag) => (
-              <span key={tag}>{tag}</span>
+              <span className="tag-card-badge" key={tag}>
+                {tag}
+              </span>
+            ))}
+            {noticeLabels.map((label) => (
+              <span className="notice-card-badge" key={label}>
+                {label}
+              </span>
             ))}
           </div>
-          {noticeLabels.length > 0 && (
-            <div className="notice-row">
-              {noticeLabels.map((label) => (
-                <span key={label}>{label}</span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
       <dl>
