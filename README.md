@@ -7,9 +7,7 @@ Steam 게임의 도전과제를 검색하고, 부족한 달성 조건을 사용�
 BCSD 프론트엔드 트랙 개인 프로젝트로 제작했습니다.
 
 [배포 사이트](https://steam-achievement-wiki.vercel.app/) ·
-[CI](https://github.com/jenna1030/steam-achievement-wiki/actions/workflows/ci.yml) ·
-[설계 문서](docs/architecture.md) ·
-[발표 가이드](docs/presentation-guide.md)
+[CI](https://github.com/jenna1030/steam-achievement-wiki/actions/workflows/ci.yml)
 
 ![CI](https://github.com/jenna1030/steam-achievement-wiki/actions/workflows/ci.yml/badge.svg)
 
@@ -104,107 +102,11 @@ Tailwind, Styled Components 같은 별도 스타일 라이브러리는 사용하
 번들에 포함하지 않습니다. `VITE_STEAM_API_KEY`처럼 클라이언트에 노출되는
 환경변수는 만들지 않습니다.
 
-자세한 요청 흐름과 상태 분리 근거는 [설계 문서](docs/architecture.md)에
-정리했습니다.
-
-## 로컬 실행
-
-### 요구 사항
-
-- Node.js `22.12.0` 이상
-- npm
-- [Steam Web API Key](https://steamcommunity.com/dev/apikey)
-
-### 1. 설치
-
-```bash
-git clone https://github.com/jenna1030/steam-achievement-wiki.git
-cd steam-achievement-wiki
-npm ci
-```
-
-### 2. 환경변수
-
-`.env.example`을 복사해 프로젝트 루트에 `.env`를 만듭니다.
-
-```env
-STEAM_API_KEY=발급받은_키
-SESSION_SECRET=충분히_긴_임의의_문자열
-CLIENT_BASE_URL=http://localhost:5173
-SERVER_BASE_URL=http://localhost:3001
-STEAM_PROXY_PORT=3001
-```
-
-`.env`는 Git에 커밋하지 않습니다.
-
-### 3. 개발 서버
-
-터미널 1에서 API 프록시를 실행합니다.
-
-```bash
-npm run dev:api
-```
-
-터미널 2에서 Vite를 실행합니다.
-
-```bash
-npm run dev
-```
-
-- 웹 앱: <http://localhost:5173>
-- API 프록시: <http://localhost:3001>
-
-Steam 로그인은 두 서버가 모두 실행 중이어야 합니다. `EADDRINUSE: 3001`이
-표시되면 이미 API 프록시가 실행 중인 것이므로 중복 실행하지 않고 기존
-프로세스를 사용합니다.
-
-## 명령어
-
-| 명령어 | 설명 |
-| --- | --- |
-| `npm run dev` | Vite 개발 서버 실행 |
-| `npm run dev:api` | 로컬 Steam API 프록시 실행 |
-| `npm run lint` | Oxlint 검사 |
-| `npm run test` | Vitest 전체 실행 |
-| `npm run build` | strict TypeScript 검사와 Vite 빌드 |
-| `npm run check` | lint → test → build 통합 검사 |
-| `npm run preview` | 프로덕션 빌드 로컬 미리보기 |
-
-Pull request와 `main` push에서도 GitHub Actions가 `npm run check`를 실행합니다.
-
-## Vercel 배포
-
-Vite 정적 앱과 루트 `api/`의 Vercel Functions를 한 프로젝트로 배포합니다.
-
-1. GitHub 저장소를 Vercel에 Import합니다.
-2. Framework Preset은 `Vite`, Build Command는 `npm run build`, Output
-   Directory는 `dist`로 설정합니다.
-3. Production Branch는 `main`으로 설정합니다.
-4. 다음 환경변수를 Production에 등록합니다.
-
-| 이름 | 값 |
-| --- | --- |
-| `STEAM_API_KEY` | Steam Web API Key |
-| `SESSION_SECRET` | 32바이트 이상의 임의 값 |
-| `CLIENT_BASE_URL` | `https://steam-achievement-wiki.vercel.app` |
-| `SERVER_BASE_URL` | `https://steam-achievement-wiki.vercel.app` |
-
-`STEAM_API_KEY`와 `SESSION_SECRET`은 Sensitive로 설정합니다. 환경변수를 추가하거나
-수정한 뒤에는 재배포해야 합니다.
-
-배포 주소가 Vercel 로그인 화면으로 이동한다면 Project Settings의 Deployment
-Protection을 확인합니다. 발표용 Production alias는 공개하고, 필요한 경우
-Preview 배포만 보호합니다.
-
-배포 후 `/games` 새로고침, `/api/auth/session`, Steam 로그인 callback,
-마이페이지 공개 라이브러리를 확인합니다.
-
 ## 프로젝트 구조
 
 ```text
 .
 ├─ api/                 # Vercel Functions 진입점
-├─ docs/                # 설계·발표 문서
 ├─ server/              # 로컬 Node API와 공용 Steam 요청 처리기
 ├─ src/
 │  ├─ apis/             # 브라우저 API 호출 함수
@@ -220,12 +122,6 @@ Preview 배포만 보호합니다.
 ├─ vercel.json
 └─ vite.config.ts
 ```
-
-## 문서
-
-- [문서 목차](docs/README.md)
-- [설계와 기술 선택](docs/architecture.md)
-- [발표 흐름과 질문 대응](docs/presentation-guide.md)
 
 ## 현재 범위와 한계
 
