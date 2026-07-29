@@ -1,0 +1,159 @@
+@media (max-width: 1280px) {
+  .hero-section,
+  .split-section {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy {
+    max-width: 1000px;
+  }
+
+  .hero-search-column {
+    max-width: 680px;
+    justify-self: start;
+  }
+
+  .split-section > .section-heading {
+    max-width: 760px;
+  }
+
+  .target-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+@media (max-width: 900px) {
+  .topbar,
+  .hero-section,
+  .split-section,
+  .rate-chart-grid,
+  .detail-hero,
+  .toolbar,
+  .search-toolbar,
+  .achievement-toolbar,
+  .info-grid,
+  .spoiler-columns,
+  .meta-panel,
+  .guide-header,
+  .spoiler-tab-list,
+  .guide-detail-grid,
+  .steam-app-panel,
+  .steam-game-grid,
+  .form-grid,
+  .action-panel,
+  .vote-panel,
+  .vote-options,
+  .checklist-card,
+  .recommendation-card,
+  .my-guide-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panel {
+    grid-template-areas:
+      'action'
+      'identity'
+      'completion';
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panel > .secondary-button {
+    justify-self: end;
+  }
+
+  .my-guide-actions {
+    justify-content: flex-start;
+  }
+
+  .target-selection-status {
+    grid-template-columns: 1fr;
+  }
+
+  .result-count {
+    justify-self: start;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .game-grid,
+  .roadmap ol {
+    grid-template-columns: 1fr;
+  }
+
+  .achievement-card {
+    grid-template-columns: 1fr;
+  }
+
+  .achievement-card-main {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .checklist-achievement-summary {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .checklist-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vote-change-actions {
+    justify-items: start;
+    max-width: none;
+  }
+
+  .vote-change-actions p {
+    text-align: left;
+  }
+
+  .achievement-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .rate-rank-list a {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .nav {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .target-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .achievement-title-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .achievement-detail-icon {
+    width: 72px;
+    height: 72px;
+  }
+
+  .steam-profile-identity {
+    grid-template-columns: 1fr;
+  }
+
+  .steam-profile-avatar {
+    width: 88px;
+    height: 88px;
+  }
+}

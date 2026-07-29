@@ -1,36 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import styled from 'styled-components'
 import { useAuthStore } from '../../stores/authStore'
-
-const TopbarActions = styled.div`
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  color: #dce6ff;
-  font-size: 13px;
-  font-weight: 800;
-`
-
-const LoginLink = styled(NavLink)`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 0 12px;
-  color: var(--color-navy);
-  font-weight: 900;
-  text-decoration: none;
-  background: var(--color-paper);
-  border: 1px solid var(--color-paper);
-  border-radius: 6px;
-
-  &:hover,
-  &.is-active {
-    color: var(--color-panel);
-    background: var(--color-red);
-    border-color: var(--color-red);
-  }
-`
 
 const navItems = [
   { to: '/', label: '홈' },
@@ -62,16 +31,16 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <TopbarActions>
-          <LoginLink
+        <div className="topbar-actions">
+          <NavLink
             className={({ isActive }) =>
               isActive ? 'login-link is-active' : 'login-link'
             }
             to={user ? '/mypage' : '/login'}
           >
             {user ? '마이페이지' : '로그인하기'}
-          </LoginLink>
-        </TopbarActions>
+          </NavLink>
+        </div>
       </header>
       <Outlet />
     </div>
