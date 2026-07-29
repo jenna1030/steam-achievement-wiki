@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSearchParams } from 'react-router-dom'
 import { ErrorState } from '../components/common/ErrorState'
 import { LoadingState } from '../components/common/LoadingState'
 import { GameCard } from '../components/game/GameCard'
 import { GameSearchForm } from '../components/search/GameSearchForm'
 import { useGamesQuery } from '../hooks/useGamesQuery'
+import { useSteamAppsQuery } from '../hooks/useSteamAppsQuery'
 import { useLibraryStore } from '../stores/libraryStore'
 import type { GameSearchFilters } from '../types/search'
 import { filterGames, getGameGenres } from '../utils/gameFilters'
@@ -22,11 +24,20 @@ export function GameSearchPage() {
   const toggleFavoriteGame = useLibraryStore((state) => state.toggleFavoriteGame)
   const addRecentSearch = useLibraryStore((state) => state.addRecentSearch)
   const { data: games = [], isError, isLoading } = useGamesQuery()
+  const {
+    data: steamApps = [],
+    isError: isSteamAppsError,
+    isFetching: isSteamAppsFetching,
+  } = useSteamAppsQuery(filters.query)
 
   const genres = useMemo(() => getGameGenres(games), [games])
   const filteredGames = useMemo(
     () => filterGames(games, filters),
     [filters, games],
+  )
+  const gamesBySteamAppId = useMemo(
+    () => new Map(games.map((game) => [game.steamAppId, game])),
+    [games],
   )
 
   return (
@@ -84,15 +95,49 @@ export function GameSearchPage() {
           <section className="steam-app-panel" aria-label="Steam 앱 목록 검색">
             <div>
               <p className="eyebrow">Steam App List</p>
-              <h2>Steam 앱 목록 연동 안내</h2>
+              <h2>Steam 앱 검색 결과</h2>
               <p className="muted">
-                공식 앱 목록 API는 현재 API Key가 필요합니다. 키를
-                브라우저에 직접 노출하지 않기 위해 1차 구현에서는 mock 게임
-                검색을 유지하고, 앱 목록 연동은 백엔드 프록시가 생긴 뒤 2차
-                확장으로 분리합니다.
+                백엔드 프록시가 공식 Steam 앱 목록 API를 호출해 검색 후보를
+                보여줍니다. 등록된 게임은 바로 상세 페이지로 이동할 수
+                있습니다.
               </p>
             </div>
             <span>API Key 비노출</span>
+            {filters.query.trim().length < 2 && (
+              <p className="muted">두 글자 이상 입력하면 Steam 앱을 검색합니다.</p>
+            )}
+            {isSteamAppsFetching && (
+              <p className="muted">Steam 앱 목록을 검색하는 중입니다.</p>
+            )}
+            {isSteamAppsError && (
+              <p className="muted">
+                Steam 앱 목록을 불러오지 못했습니다. `npm run dev:api`가
+                실행 중인지 확인해주세요.
+              </p>
+            )}
+            {steamApps.length > 0 && (
+              <div className="steam-app-results">
+                {steamApps.map((app) => {
+                  const linkedGame = gamesBySteamAppId.get(app.appid)
+
+                  return linkedGame ? (
+                    <Link key={app.appid} to={`/games/${linkedGame.id}`}>
+                      {app.name} <small>#{app.appid}</small>
+                    </Link>
+                  ) : (
+                    <span key={app.appid}>
+                      {app.name} <small>#{app.appid}</small>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+            {!isSteamAppsFetching &&
+              filters.query.trim().length >= 2 &&
+              steamApps.length === 0 &&
+              !isSteamAppsError && (
+                <p className="muted">Steam 앱 검색 결과가 없습니다.</p>
+              )}
           </section>
 
           {filteredGames.length > 0 ? (

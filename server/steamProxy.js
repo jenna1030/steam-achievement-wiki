@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const PORT = Number(process.env.STEAM_PROXY_PORT ?? 3001)
+let steamAppsCache = null
 
 function loadEnvFile() {
   try {
@@ -89,10 +90,100 @@ function mergeAchievements(schemaAchievements, percentageAchievements) {
   })
 }
 
+function getSteamApiKey() {
+  return process.env.STEAM_API_KEY
+}
+
+function getFilteredApps(apps, query, limit) {
+  const normalizedQuery = query.trim().toLowerCase()
+
+  if (!normalizedQuery) {
+    return []
+  }
+
+  return apps
+    .filter((app) => {
+      const name = String(app.name ?? '').toLowerCase()
+      const appid = String(app.appid ?? '')
+
+      return name.includes(normalizedQuery) || appid.includes(normalizedQuery)
+    })
+    .sort((a, b) => {
+      const aName = String(a.name ?? '').toLowerCase()
+      const bName = String(b.name ?? '').toLowerCase()
+      const aStartsWithQuery = aName.startsWith(normalizedQuery)
+      const bStartsWithQuery = bName.startsWith(normalizedQuery)
+
+      if (aStartsWithQuery !== bStartsWithQuery) {
+        return aStartsWithQuery ? -1 : 1
+      }
+
+      return aName.length - bName.length
+    })
+    .slice(0, limit)
+}
+
+async function fetchSteamApps(key) {
+  if (steamAppsCache) {
+    return steamAppsCache
+  }
+
+  const appsUrl = new URL(
+    'https://api.steampowered.com/IStoreService/GetAppList/v1/',
+  )
+  appsUrl.searchParams.set('key', key)
+  appsUrl.searchParams.set('include_games', 'true')
+  appsUrl.searchParams.set('include_dlc', 'false')
+  appsUrl.searchParams.set('include_software', 'false')
+  appsUrl.searchParams.set('include_videos', 'false')
+  appsUrl.searchParams.set('include_hardware', 'false')
+  appsUrl.searchParams.set('max_results', '50000')
+
+  const data = await fetchJson(appsUrl)
+  steamAppsCache = data?.response?.apps ?? []
+
+  return steamAppsCache
+}
+
+async function handleSteamApps(requestUrl, response) {
+  const query = requestUrl.searchParams.get('query') ?? ''
+  const limit = Math.min(
+    Number(requestUrl.searchParams.get('limit') ?? 12),
+    30,
+  )
+  const key = getSteamApiKey()
+
+  if (query.trim().length < 2) {
+    sendJson(response, 200, { apps: [] })
+    return
+  }
+
+  if (!key) {
+    sendJson(response, 500, { message: 'STEAM_API_KEY가 없습니다.' })
+    return
+  }
+
+  try {
+    const apps = await fetchSteamApps(key)
+
+    sendJson(response, 200, {
+      apps: getFilteredApps(apps, query, limit),
+      totalCached: apps.length,
+    })
+  } catch (error) {
+    sendJson(response, 502, {
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Steam 앱 목록을 처리하지 못했습니다.',
+    })
+  }
+}
+
 async function handleSteamAchievements(requestUrl, response) {
   const appid = requestUrl.searchParams.get('appid')
   const language = requestUrl.searchParams.get('lang') ?? 'koreana'
-  const key = process.env.STEAM_API_KEY
+  const key = getSteamApiKey()
 
   if (!appid || !/^\d+$/.test(appid)) {
     sendJson(response, 400, { message: '유효한 appid가 필요합니다.' })
@@ -161,6 +252,11 @@ createServer((request, response) => {
     requestUrl.pathname === '/api/steam/achievements'
   ) {
     void handleSteamAchievements(requestUrl, response)
+    return
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/steam/apps') {
+    void handleSteamApps(requestUrl, response)
     return
   }
 

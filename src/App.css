@@ -246,6 +246,8 @@ button:hover,
 
 .game-card {
   overflow: hidden;
+  color: inherit;
+  text-decoration: none;
 }
 
 .clickable-card {
@@ -479,7 +481,8 @@ dd {
   gap: 8px;
 }
 
-.steam-app-results span {
+.steam-app-results span,
+.steam-app-results a {
   display: inline-flex;
   gap: 6px;
   align-items: center;
@@ -488,14 +491,25 @@ dd {
   color: #343941;
   font-size: 13px;
   font-weight: 800;
+  text-decoration: none;
   background: #f7f5ee;
   border: 1px solid #e5dece;
   border-radius: 999px;
 }
 
+.steam-app-results a:hover {
+  color: var(--color-panel);
+  background: var(--color-blue);
+  border-color: var(--color-blue);
+}
+
 .steam-app-results small {
   color: #69707a;
   font-size: 12px;
+}
+
+.steam-app-results a:hover small {
+  color: var(--color-panel);
 }
 
 .chip-button {

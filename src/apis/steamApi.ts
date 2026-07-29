@@ -28,6 +28,10 @@ interface SteamAchievementsResponse {
   achievements?: SteamAchievement[]
 }
 
+interface SteamAppListResponse {
+  apps?: SteamApp[]
+}
+
 export async function fetchSteamGlobalAchievementPercentages(
   steamAppId: number,
 ) {
@@ -58,8 +62,18 @@ export async function fetchSteamAchievements(steamAppId: number) {
   return data.achievements ?? []
 }
 
-export async function fetchSteamAppList() {
-  throw new Error(
-    'Steam 앱 목록 API는 API Key가 필요하므로 백엔드 프록시에서 호출해야 합니다.',
-  )
+export async function fetchSteamAppList(query: string) {
+  const params = new URLSearchParams({
+    query,
+    limit: '12',
+  })
+  const response = await fetch(`/api/steam/apps?${params}`)
+
+  if (!response.ok) {
+    throw new Error('Steam 앱 목록을 불러오지 못했습니다.')
+  }
+
+  const data = (await response.json()) as SteamAppListResponse
+
+  return data.apps ?? []
 }

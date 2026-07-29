@@ -106,7 +106,11 @@ export function HomePage() {
         {!isFeaturedGamesLoading && !isFeaturedGamesError && (
           <div className="game-grid">
             {featuredGames.map((game) => (
-              <article className="game-card" key={game.id}>
+              <Link
+                className="game-card clickable-card"
+                key={game.id}
+                to={`/games/${game.id}`}
+              >
                 <img src={game.image} alt={`${game.title} 대표 이미지`} />
                 <div className="game-card-body">
                   <p>{game.genre}</p>
@@ -121,11 +125,11 @@ export function HomePage() {
                       <dd>{game.averageRate}%</dd>
                     </div>
                   </dl>
-                  <Link className="text-link" to={`/games/${game.id}`}>
+                  <span className="text-link">
                     상세 보기
-                  </Link>
+                  </span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}
