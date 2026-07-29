@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getExampleGuidesForAchievement } from '../data/exampleGuides'
 import { useChecklistStore } from '../stores/checklistStore'
 import { useAuthStore } from '../stores/authStore'
+import { useGuideFeedbackStore } from '../stores/guideFeedbackStore'
 import { useGuideStore } from '../stores/guideStore'
 import type { ChecklistStatus } from '../types/checklist'
 import type { SpoilerLevel } from '../types/guide'
@@ -10,6 +12,10 @@ import {
   getGameIdFromAchievementId,
 } from '../utils/achievementIdentity'
 import { isGuideOwnedBy } from '../utils/guideOwnership'
+import {
+  getEffectiveGuideLikeCount,
+  selectMostLikedGuide,
+} from '../utils/guideRanking'
 
 const statusOptions: Array<{ value: ChecklistStatus; label: string }> = [
   { value: 'saved', label: '저장됨' },
@@ -25,6 +31,7 @@ export function ChecklistPage() {
   const items = useChecklistStore((state) => state.items)
   const user = useAuthStore((state) => state.user)
   const userGuides = useGuideStore((state) => state.userGuides)
+  const guideReactions = useGuideFeedbackStore((state) => state.reactions)
   const updateStatus = useChecklistStore((state) => state.updateStatus)
   const updateMemo = useChecklistStore((state) => state.updateMemo)
   const toggleChecklist = useChecklistStore((state) => state.toggleChecklist)
@@ -61,11 +68,27 @@ export function ChecklistPage() {
           {items.map((item) => {
             const gameId =
               item.gameId ?? getGameIdFromAchievementId(item.achievementId)
-            const guide = userGuides.find(
+            const ownedGuides = userGuides.filter(
               (targetGuide) =>
                 targetGuide.achievementId === item.achievementId &&
                 isGuideOwnedBy(targetGuide, user?.steamId),
             )
+            const candidateGuides = [
+              ...ownedGuides,
+              ...getExampleGuidesForAchievement(item.achievementId),
+            ]
+            const guide = selectMostLikedGuide(
+              candidateGuides,
+              guideReactions,
+              user?.steamId ?? null,
+            )
+            const guideLikeCount = guide
+              ? getEffectiveGuideLikeCount(
+                  guide,
+                  guideReactions,
+                  user?.steamId ?? null,
+                )
+              : 0
             const selectedGuideLevel =
               expandedGuide?.achievementId === item.achievementId
                 ? expandedGuide.level
@@ -157,6 +180,9 @@ export function ChecklistPage() {
                   </div>
                   {guide && selectedGuideLevel && (
                     <section className="checklist-guide-preview">
+                      <span className="checklist-guide-attribution">
+                        좋아요 최다 · {guide.author} · 좋아요 {guideLikeCount}
+                      </span>
                       <p className="eyebrow">
                         {selectedGuideLevel === 'hint'
                           ? '힌트'

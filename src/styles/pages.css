@@ -588,6 +588,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
   gap: 18px;
+  align-items: start;
   padding: 18px;
 }
 
@@ -631,6 +632,14 @@
   margin-bottom: 6px;
 }
 
+.checklist-guide-attribution {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .checklist-guide-preview strong {
   color: var(--color-ink);
   line-height: 1.7;
@@ -639,6 +648,15 @@
 .checklist-controls {
   display: grid;
   gap: 12px;
+  align-content: start;
+  align-self: start;
+}
+
+.checklist-controls select,
+.checklist-controls input {
+  box-sizing: border-box;
+  height: 48px;
+  min-height: 48px;
 }
 
 .checklist-card-footer {
