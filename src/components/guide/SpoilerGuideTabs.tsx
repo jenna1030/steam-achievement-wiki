@@ -276,40 +276,42 @@ export function SpoilerGuideTabs({
             <p className="guide-content-empty">등록된 공략 내용이 없습니다.</p>
           )}
 
-          <section className="guide-detail-grid" aria-label="공략 부가 정보">
-            <div>
-              <h4>달성 조건</h4>
-              <ul>
-                {guide.conditions.map((condition) => (
-                  <li key={condition}>{condition}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4>준비물</h4>
-              <ul>
-                {guide.supplies.map((supply) => (
-                  <li key={supply}>{supply}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4>진행 순서</h4>
-              <ol>
-                {guide.recommendedOrder.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </div>
-            <div>
-              <h4>주의사항</h4>
-              <ul>
-                {guide.warnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
-            </div>
-          </section>
+          {activeLevel !== 'hint' && (
+            <section className="guide-detail-grid" aria-label="공략 부가 정보">
+              <div>
+                <h4>달성 조건</h4>
+                <ul>
+                  {guide.conditions.map((condition) => (
+                    <li key={condition}>{condition}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4>준비물</h4>
+                <ul>
+                  {guide.supplies.map((supply) => (
+                    <li key={supply}>{supply}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4>진행 순서</h4>
+                <ol>
+                  {guide.recommendedOrder.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+              <div>
+                <h4>주의사항</h4>
+                <ul>
+                  {guide.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
         </div>
       )}
     </article>
