@@ -424,6 +424,7 @@ async function enrichSteamStoreGames(apps, tagNameById) {
         try {
           const details = await fetchSteamStoreDetails(app.appid)
           const genres = getStoreGenres(details)
+          const achievementCount = Number(details?.achievements?.total ?? 0)
 
           return {
             ...baseApp,
@@ -431,13 +432,15 @@ async function enrichSteamStoreGames(apps, tagNameById) {
             releaseDate: details?.release_date?.date || app.releaseDate,
             genres,
             tags,
-            hasAchievements: Number(details?.achievements?.total ?? 0) > 0,
+            achievementCount,
+            hasAchievements: achievementCount > 0,
           }
         } catch {
           return {
             ...baseApp,
             genres: [],
             tags,
+            achievementCount: 0,
             hasAchievements: false,
           }
         }

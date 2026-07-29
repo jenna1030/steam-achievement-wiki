@@ -4,7 +4,6 @@ import type { GameSearchFilters } from '../../types/search'
 interface GameSearchFormProps {
   filters: GameSearchFilters
   classifications: string[]
-  resultCount: number
   onChange: (filters: GameSearchFilters) => void
   onSubmit: () => void
 }
@@ -12,7 +11,6 @@ interface GameSearchFormProps {
 export function GameSearchForm({
   filters,
   classifications,
-  resultCount,
   onChange,
   onSubmit,
 }: GameSearchFormProps) {
@@ -182,7 +180,7 @@ export function GameSearchForm({
         <span>도전과제</span>
         <select
           value={filters.achievementFilter}
-          aria-label="도전과제 유무 필터"
+          aria-label="도전과제 개수 필터"
           onChange={(event) =>
             onChange({
               ...filters,
@@ -192,12 +190,12 @@ export function GameSearchForm({
         >
           <option value="all">전체 게임</option>
           <option value="with-achievements">도전과제 있음</option>
+          <option value="up-to-10">도전과제 1~10개</option>
+          <option value="11-to-50">도전과제 11~50개</option>
+          <option value="over-50">도전과제 51개 이상</option>
         </select>
       </label>
       <button type="submit">검색</button>
-      <p aria-live="polite" className="result-count">
-        {resultCount}개 게임
-      </p>
     </form>
   )
 }

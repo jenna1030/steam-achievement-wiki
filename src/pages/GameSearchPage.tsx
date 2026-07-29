@@ -5,6 +5,7 @@ import { GameSearchForm } from '../components/search/GameSearchForm'
 import { useSteamStoreGamesQuery } from '../hooks/useSteamStoreGamesQuery'
 import { useLibraryStore } from '../stores/libraryStore'
 import type { GameSearchFilters } from '../types/search'
+import { matchesAchievementCountFilter } from '../utils/gameSearchFilters'
 
 export function GameSearchPage() {
   const [searchParams] = useSearchParams()
@@ -47,12 +48,9 @@ export function GameSearchPage() {
   )
   const games = useMemo(
     () =>
-      loadedGames.filter((game) => {
-        const matchesAchievementFilter =
-          filters.achievementFilter === 'all' || game.hasAchievements
-
-        return matchesAchievementFilter
-      }),
+      loadedGames.filter((game) =>
+        matchesAchievementCountFilter(game, filters.achievementFilter),
+      ),
     [filters.achievementFilter, loadedGames],
   )
   const totalCount = data?.pages[0]?.totalCount ?? 0
@@ -73,7 +71,6 @@ export function GameSearchPage() {
       <GameSearchForm
         filters={filters}
         classifications={classifications}
-        resultCount={games.length}
         onChange={setFilters}
         onSubmit={() => {
           const normalizedQuery = filters.query.trim()
@@ -129,10 +126,11 @@ export function GameSearchPage() {
               : '검색어가 없으면 Steam Store 상위 게임을 먼저 보여줍니다.'}
           </p>
         </div>
-        <span>
+        <span aria-live="polite">
+          {loadedGames.length} / {totalCount}개
           {isFiltering
-            ? `${games.length}개 표시 / ${loadedGames.length}개 불러옴`
-            : `${loadedGames.length} / ${totalCount}개`}
+            ? ` · 현재 불러온 목록 중 ${games.length}개 조건 일치`
+            : ''}
         </span>
         {isLoading && <LoadingState message="Steam Store 목록을 불러오는 중입니다." />}
         {isError && (
@@ -158,6 +156,9 @@ export function GameSearchPage() {
                       </p>
                       <h3>{game.name}</h3>
                       <div className="game-genre-row">
+                        <span className="achievement-count-chip">
+                          도전과제 {game.achievementCount}개
+                        </span>
                         {game.genres.length + game.tags.length > 0 ? (
                           Array.from(
                             new Set([...game.genres, ...game.tags]),

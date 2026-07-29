@@ -70,10 +70,6 @@
     grid-template-columns: 1fr;
   }
 
-  .result-count {
-    justify-self: start;
-  }
-
   .topbar {
     align-items: flex-start;
     flex-direction: column;

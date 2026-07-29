@@ -25,6 +25,7 @@ export interface SteamStoreGame {
   releaseDate: string
   genres: string[]
   tags: string[]
+  achievementCount: number
   hasAchievements: boolean
 }
 
@@ -175,6 +176,7 @@ export async function fetchSteamStoreGames({
       (game) =>
         !Array.isArray(game.genres) ||
         !Array.isArray(game.tags) ||
+        typeof game.achievementCount !== 'number' ||
         typeof game.hasAchievements !== 'boolean',
     )
   ) {

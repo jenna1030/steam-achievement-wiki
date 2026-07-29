@@ -165,7 +165,7 @@ dd {
 }
 
 .search-toolbar {
-  grid-template-columns: minmax(220px, 1fr) 190px 190px auto 92px;
+  grid-template-columns: minmax(220px, 1fr) 190px 210px auto;
   align-items: end;
 }
 
@@ -230,16 +230,6 @@ dd {
   padding: 10px;
   color: var(--color-muted);
   font-size: 12px;
-}
-
-.result-count {
-  align-self: center;
-  justify-self: end;
-  margin: 0;
-  color: #5d6673;
-  font-size: 14px;
-  font-weight: 900;
-  white-space: nowrap;
 }
 
 .checkbox-label {
@@ -523,6 +513,12 @@ dd {
   background: #e8edf8;
   border: 1px solid #c8d2e6;
   border-radius: 999px;
+}
+
+.game-genre-row .achievement-count-chip {
+  color: var(--color-paper);
+  background: var(--color-navy);
+  border-color: var(--color-navy);
 }
 
 .local-storage-note {
