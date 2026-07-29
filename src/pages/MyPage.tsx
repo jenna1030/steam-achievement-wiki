@@ -9,14 +9,14 @@ import { useSteamLibraryQuery } from '../hooks/useSteamLibraryQuery'
 import { useSteamProfileQuery } from '../hooks/useSteamProfileQuery'
 import type {
   SteamOwnedGame,
-  SteamPlayerAchievementProgress,
+  SteamPlayerAchievementSummary,
 } from '../apis/steamApi'
 import { useAuthStore } from '../stores/authStore'
 import { useGuideStore } from '../stores/guideStore'
 import { isGuideOwnedBy } from '../utils/guideOwnership'
 
 const PAGE_SIZE = 20
-const ACHIEVEMENT_OVERVIEW_PAGE_DELAY_MS = 1000
+const ACHIEVEMENT_OVERVIEW_PAGE_DELAY_MS = 250
 type LibrarySortOption = 'playtime-desc' | 'recent-desc' | 'name-asc'
 
 const sortLabels: Record<LibrarySortOption, string> = {
@@ -52,7 +52,7 @@ function LibraryGameCard({
   progress,
 }: {
   game: SteamOwnedGame
-  progress?: SteamPlayerAchievementProgress
+  progress?: SteamPlayerAchievementSummary
 }) {
   const { data: gameDetail } = useGameDetailQuery(game.appid)
   const [failedImageUrls, setFailedImageUrls] = useState<string[]>([])

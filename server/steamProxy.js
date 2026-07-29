@@ -45,8 +45,8 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 const PROFILE_CACHE_MS = 1000 * 60 * 10
 const LIBRARY_CACHE_MS = 1000 * 60 * 10
 const PLAYER_ACHIEVEMENT_CACHE_MS = 1000 * 60 * 15
-const ACHIEVEMENT_OVERVIEW_PAGE_SIZE = 20
-const ACHIEVEMENT_REQUEST_CONCURRENCY = 5
+const ACHIEVEMENT_OVERVIEW_PAGE_SIZE = 30
+const ACHIEVEMENT_REQUEST_CONCURRENCY = 6
 const STEAM_FETCH_TIMEOUT_MS = 12_000
 const RATE_LIMIT_WINDOW_MS = 60_000
 const STEAM_ROUTE_RATE_LIMITS = new Map([
@@ -882,6 +882,17 @@ function createUnsupportedAchievementProgress(appid) {
   }
 }
 
+function createAchievementProgressSummary(progress) {
+  return {
+    appid: progress.appid,
+    gameName: progress.gameName,
+    supported: progress.supported,
+    achievedCount: progress.achievedCount,
+    totalCount: progress.totalCount,
+    isPerfect: progress.isPerfect,
+  }
+}
+
 async function fetchPlayerAchievementProgress(key, steamid, appid) {
   const cacheKey = `${steamid}:${appid}`
   const cachedProgress = getFreshCacheValue(playerAchievementCache, cacheKey)
@@ -1098,7 +1109,7 @@ async function handleAchievementOverview(request, requestUrl, response) {
       start,
       start + ACHIEVEMENT_OVERVIEW_PAGE_SIZE,
     )
-    const games = await mapWithConcurrency(
+    const progress = await mapWithConcurrency(
       pageGames,
       ACHIEVEMENT_REQUEST_CONCURRENCY,
       (game) =>
@@ -1108,6 +1119,7 @@ async function handleAchievementOverview(request, requestUrl, response) {
           game.appid,
         ),
     )
+    const games = progress.map(createAchievementProgressSummary)
     const nextStart = start + pageGames.length
 
     sendJson(response, 200, {

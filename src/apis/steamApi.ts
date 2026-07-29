@@ -64,6 +64,11 @@ export interface SteamPlayerAchievementProgress {
   achievements: SteamPlayerAchievement[]
 }
 
+export type SteamPlayerAchievementSummary = Omit<
+  SteamPlayerAchievementProgress,
+  'achievements'
+>
+
 interface SteamAchievementsResponse {
   achievements?: SteamAchievement[]
 }
@@ -102,7 +107,7 @@ export interface SteamAchievementOverviewPage {
   count: number
   totalGames: number
   nextStart: number | null
-  games: SteamPlayerAchievementProgress[]
+  games: SteamPlayerAchievementSummary[]
 }
 
 export interface SteamSessionUser {
