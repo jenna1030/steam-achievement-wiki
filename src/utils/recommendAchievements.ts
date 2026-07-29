@@ -52,5 +52,5 @@ export function recommendEasyAchievements(
       }
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
+    .slice(0, 3)
 }
